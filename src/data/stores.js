@@ -1,91 +1,495 @@
-// Base de datos de locales del centro comercial
+// src/data/stores.js
+
 export const stores = [
+  // RESTAURANTES
   {
-    id: 1,
-    name: 'Nike Store',
-    category: 'ropa_deportiva',
-    keywords: ['nike', 'tenis', 'zapatos', 'deportivo', 'ropa deportiva', 'calzado'],
+    id: 'crepes-waffles',
+    name: 'Crepes & Waffles',
+    category: 'restaurante',
+    subcategory: 'casual dining',
     floor: 'segundo piso',
-    zone: 'zona norte',
-    phone: '+573001111111',
-    hours: 'Lunes a Sábado de 10 AM a 9 PM, Domingos de 11 AM a 8 PM',
-    description: 'Tienda de ropa y calzado deportivo Nike'
+    zone: 'zona de restaurantes',
+    local: '201',
+    phone: '607 724 8532',
+    hours: 'lunes a jueves 11 AM a 10 PM, viernes a domingo 11 AM a 11 PM',
+    description: 'Restaurante de comida casual, especialidad en crepes dulces y salados',
+    keywords: ['crepes', 'waffles', 'postres', 'comida', 'almuerzo', 'cena', 'helado'],
+    priceRange: '$$',
+    averagePrice: '35000-50000',
+    specialties: ['Crepes de pollo', 'Waffles con helado', 'Ensaladas', 'Malteadas'],
+    delivery: true,
+    reservations: true,
+    seatingCapacity: 80,
+    paymentMethods: ['efectivo', 'tarjeta', 'nequi', 'daviplata'],
+    menu: {
+      entradas: ['Palitos de mozzarella', 'Nachos'],
+      principales: ['Crepe de pollo', 'Crepe de champiñones', 'Lasaña'],
+      postres: ['Waffle con helado', 'Crepe de nutella', 'Brownie'],
+      bebidas: ['Limonada', 'Jugo natural', 'Malteada', 'Café']
+    },
+    promotions: [
+      'Combo almuerzo ejecutivo $28,000 (lunes a viernes)',
+      '2x1 en malteadas los miércoles'
+    ]
   },
   {
-    id: 2,
+    id: 'subway',
     name: 'Subway',
     category: 'restaurante',
-    keywords: ['subway', 'comida', 'comer', 'sandwich', 'almuerzo', 'restaurante'],
+    subcategory: 'comida rápida',
     floor: 'primer piso',
     zone: 'zona de comidas',
-    phone: '+573002222222',
-    hours: 'Lunes a Sábado de 10 AM a 9 PM, Domingos de 11 AM a 8 PM',
-    description: 'Restaurante de comida rápida, especialidad en sandwiches'
+    local: '105',
+    phone: '607 724 7890',
+    hours: 'todos los días de 10 AM a 9 PM',
+    description: 'Sándwiches personalizados y ensaladas frescas',
+    keywords: ['subway', 'sandwich', 'comida rápida', 'ensalada', 'saludable'],
+    priceRange: '$',
+    averagePrice: '15000-25000',
+    specialties: ['Sub del día', 'Ensalada personalizada', 'Galletas'],
+    delivery: true,
+    reservations: false,
+    paymentMethods: ['efectivo', 'tarjeta'],
+    menu: {
+      subs: ['Italiano BMT', 'Pechuga de pavo', 'Atún', 'Pollo teriyaki'],
+      ensaladas: ['César', 'Atún', 'Pollo'],
+      extras: ['Galletas', 'Papas', 'Bebida']
+    },
+    promotions: [
+      'Sub del día $12,900',
+      'Combo sub + bebida + galleta $18,900'
+    ]
   },
   {
-    id: 3,
-    name: 'Cinemark',
-    category: 'entretenimiento',
-    keywords: ['cine', 'película', 'cinemark', 'pelicula', 'cartelera', 'función'],
-    floor: 'tercer piso',
-    zone: 'zona de entretenimiento',
-    phone: '+573003333333',
-    hours: 'Todos los días de 11 AM a 11 PM',
-    description: 'Cine con múltiples salas y estrenos'
-  },
-  {
-    id: 4,
+    id: 'la-toscana',
     name: 'La Toscana',
     category: 'restaurante',
-    keywords: ['toscana', 'italiano', 'pasta', 'pizza', 'comida italiana', 'restaurante'],
+    subcategory: 'italiana',
     floor: 'segundo piso',
-    zone: 'zona de comidas',
-    phone: '+573004444444',
-    hours: 'Lunes a Sábado de 12 PM a 10 PM, Domingos de 12 PM a 9 PM',
-    description: 'Restaurante de comida italiana'
+    zone: 'zona de restaurantes',
+    local: '205',
+    phone: '607 724 5555',
+    hours: 'lunes a domingo de 12 PM a 10 PM',
+    description: 'Restaurante de comida italiana, pizzas artesanales y pastas',
+    keywords: ['italiana', 'pizza', 'pasta', 'lasaña', 'italiana'],
+    priceRange: '$$',
+    averagePrice: '40000-60000',
+    specialties: ['Pizza margarita', 'Lasaña bolognesa', 'Ravioles', 'Tiramisú'],
+    delivery: true,
+    reservations: true,
+    seatingCapacity: 60,
+    paymentMethods: ['efectivo', 'tarjeta', 'nequi'],
+    menu: {
+      pizzas: ['Margarita', 'Pepperoni', 'Cuatro quesos', 'Hawaiana'],
+      pastas: ['Lasaña', 'Ravioles', 'Fetuccini alfredo', 'Carbonara'],
+      postres: ['Tiramisú', 'Panna cotta', 'Helado'],
+      bebidas: ['Vino', 'Limonada', 'Gaseosa']
+    },
+    promotions: [
+      '2x1 en pizzas familiares los martes',
+      'Combo pasta + postre + bebida $45,000'
+    ]
+  },
+  
+  // TIENDAS DE ROPA
+  {
+    id: 'nike',
+    name: 'Nike',
+    category: 'ropa',
+    subcategory: 'deportiva',
+    floor: 'segundo piso',
+    zone: 'zona norte',
+    local: '215',
+    phone: '607 724 1234',
+    hours: 'lunes a sábado de 10 AM a 8 PM, domingos de 11 AM a 7 PM',
+    description: 'Tienda de ropa y calzado deportivo',
+    keywords: ['nike', 'tenis', 'deportivos', 'zapatos', 'ropa deportiva', 'running'],
+    priceRange: '$$$',
+    averagePrice: '150000-400000',
+    specialties: ['Tenis deportivos', 'Ropa running', 'Accesorios fitness'],
+    delivery: false,
+    brands: ['Nike', 'Jordan'],
+    sizes: ['Niños', 'Hombre', 'Mujer'],
+    paymentMethods: ['efectivo', 'tarjeta', 'crédito'],
+    categories: ['Calzado', 'Ropa', 'Accesorios'],
+    promotions: [
+      'Descuento 20% en colecciones pasadas',
+      'Meses sin intereses con tarjetas participantes'
+    ]
   },
   {
-    id: 5,
-    name: 'Davivienda',
-    category: 'servicios',
-    keywords: ['banco', 'davivienda', 'cajero', 'plata', 'dinero', 'tarjeta', 'cuenta'],
+    id: 'adidas',
+    name: 'Adidas',
+    category: 'ropa',
+    subcategory: 'deportiva',
+    floor: 'segundo piso',
+    zone: 'zona norte',
+    local: '218',
+    phone: '607 724 1235',
+    hours: 'lunes a sábado de 10 AM a 8 PM, domingos de 11 AM a 7 PM',
+    description: 'Ropa y calzado deportivo de alto rendimiento',
+    keywords: ['adidas', 'tenis', 'deportivo', 'futbol', 'running'],
+    priceRange: '$$$',
+    averagePrice: '140000-380000',
+    specialties: ['Tenis de fútbol', 'Ropa deportiva', 'Mochilas'],
+    delivery: false,
+    brands: ['Adidas', 'Adidas Originals'],
+    sizes: ['Niños', 'Hombre', 'Mujer'],
+    paymentMethods: ['efectivo', 'tarjeta', 'crédito'],
+    promotions: [
+      'Descuento 15% en segunda compra',
+      'Black Friday: hasta 40% de descuento'
+    ]
+  },
+  {
+    id: 'zara',
+    name: 'Zara',
+    category: 'ropa',
+    subcategory: 'moda',
+    floor: 'primer piso',
+    zone: 'zona central',
+    local: '110',
+    phone: '607 724 3333',
+    hours: 'lunes a sábado de 10 AM a 9 PM, domingos de 11 AM a 8 PM',
+    description: 'Moda contemporánea para hombre, mujer y niños',
+    keywords: ['zara', 'moda', 'ropa', 'vestidos', 'camisas', 'pantalones'],
+    priceRange: '$$',
+    averagePrice: '80000-250000',
+    specialties: ['Colecciones de temporada', 'Línea básica', 'Accesorios'],
+    delivery: false,
+    sections: ['Mujer', 'Hombre', 'Niños', 'Accesorios'],
+    paymentMethods: ['efectivo', 'tarjeta', 'crédito'],
+    promotions: [
+      'Nueva colección cada mes',
+      'Rebajas de fin de temporada hasta 50%'
+    ]
+  },
+  {
+    id: 'hm',
+    name: 'H&M',
+    category: 'ropa',
+    subcategory: 'moda',
+    floor: 'primer piso',
+    zone: 'zona sur',
+    local: '115',
+    phone: '607 724 4444',
+    hours: 'lunes a sábado de 10 AM a 9 PM, domingos de 11 AM a 8 PM',
+    description: 'Moda actual a precios accesibles',
+    keywords: ['h&m', 'hm', 'moda', 'ropa', 'barato', 'tendencia'],
+    priceRange: '$',
+    averagePrice: '40000-150000',
+    delivery: false,
+    sections: ['Mujer', 'Hombre', 'Niños', 'H&M Home'],
+    paymentMethods: ['efectivo', 'tarjeta'],
+    promotions: [
+      'Descuentos especiales para estudiantes',
+      'Programa de reciclaje: trae ropa usada y recibe cupón'
+    ]
+  },
+  
+  // BANCOS Y SERVICIOS FINANCIEROS
+  {
+    id: 'davivienda',
+    name: 'Banco Davivienda',
+    category: 'banco',
+    subcategory: 'servicios financieros',
     floor: 'primer piso',
     zone: 'zona de servicios',
-    phone: '+573005555555',
-    hours: 'Lunes a Viernes de 8 AM a 5 PM, Sábados de 9 AM a 1 PM',
-    description: 'Oficina bancaria y cajeros automáticos'
+    local: '102',
+    phone: '607 724 9999',
+    hours: 'lunes a viernes de 8 AM a 5 PM, sábados de 9 AM a 12 PM',
+    description: 'Servicios bancarios completos, cajeros automáticos',
+    keywords: ['banco', 'davivienda', 'cajero', 'cuenta', 'tarjeta', 'crédito', 'retiro'],
+    services: ['Apertura de cuentas', 'Créditos', 'Tarjetas', 'Retiros', 'Consignaciones'],
+    atmAvailable: true,
+    atmHours: '24 horas',
+    paymentMethods: ['efectivo'],
+    specialties: ['Cuenta de ahorros', 'Tarjeta de crédito DaviPlata', 'Créditos']
+  },
+  {
+    id: 'bancolombia',
+    name: 'Bancolombia',
+    category: 'banco',
+    subcategory: 'servicios financieros',
+    floor: 'primer piso',
+    zone: 'zona de servicios',
+    local: '103',
+    phone: '607 724 8888',
+    hours: 'lunes a viernes de 8 AM a 5 PM, sábados de 9 AM a 12 PM',
+    description: 'Punto de atención bancaria y cajeros automáticos',
+    keywords: ['banco', 'bancolombia', 'cajero', 'nequi', 'transferencia'],
+    services: ['Apertura de cuentas', 'Nequi', 'Tarjetas', 'Créditos'],
+    atmAvailable: true,
+    atmHours: '24 horas',
+    paymentMethods: ['efectivo']
+  },
+  
+  // ENTRETENIMIENTO
+  {
+    id: 'cinemark',
+    name: 'Cinemark',
+    category: 'cine',
+    subcategory: 'entretenimiento',
+    floor: 'tercer piso',
+    zone: 'zona de entretenimiento',
+    local: '301',
+    phone: '607 724 6666',
+    hours: 'todos los días de 11 AM a 11 PM',
+    description: 'Complejo de cines con múltiples salas',
+    keywords: ['cine', 'cinemark', 'película', 'pelicula', 'movie', 'cartelera', 'función', 'funcion'],
+    priceRange: '$$',
+    salas: 8,
+    technologies: ['2D', '3D', 'XD', 'Dolby Atmos'],
+    specialties: ['Estrenos', 'Funciones especiales', 'Cine infantil'],
+    paymentMethods: ['efectivo', 'tarjeta', 'nequi'],
+    prices: {
+      '2d': {
+        'lunes_jueves': 12000,
+        'viernes_domingo': 16000,
+        'estreno': 18000
+      },
+      '3d': {
+        'lunes_jueves': 18000,
+        'viernes_domingo': 22000,
+        'estreno': 25000
+      },
+      'xd': {
+        'todos': 28000
+      }
+    },
+    combos: [
+      'Combo individual: crispetas + gaseosa $15,000',
+      'Combo pareja: crispetas grande + 2 gaseosas $25,000',
+      'Combo familiar: crispetas jumbo + 4 gaseosas + nachos $45,000'
+    ],
+    cartelera: [
+      'Película 1 - Acción (PG-13)',
+      'Película 2 - Animación (G)',
+      'Película 3 - Drama (R)',
+      'Película 4 - Comedia (PG)'
+    ],
+    promotions: [
+      'Miércoles de cine: boletas 2D a $10,000',
+      'Combo estudiante: boleta + combo individual $22,000'
+    ]
+  },
+  
+  // FARMACIAS
+  {
+    id: 'cruz-verde',
+    name: 'Drogas La Rebaja',
+    category: 'farmacia',
+    subcategory: 'salud',
+    floor: 'primer piso',
+    zone: 'zona de servicios',
+    local: '108',
+    phone: '607 724 7777',
+    hours: 'lunes a sábado de 8 AM a 8 PM, domingos de 9 AM a 6 PM',
+    description: 'Farmacia con medicamentos, productos de cuidado personal y belleza',
+    keywords: ['farmacia', 'drogas', 'rebaja', 'medicina', 'medicamento', 'pastillas', 'salud'],
+    services: ['Medicamentos con fórmula', 'Productos de belleza', 'Cuidado personal', 'Inyectología'],
+    delivery: true,
+    paymentMethods: ['efectivo', 'tarjeta', 'nequi', 'daviplata'],
+    specialties: ['Medicamentos genéricos', 'Productos naturales', 'Cosméticos'],
+    promotions: [
+      'Descuento 20% para adultos mayores',
+      '3x2 en productos seleccionados'
+    ]
+  },
+  
+  // SUPERMERCADO
+  {
+    id: 'exito',
+    name: 'Éxito Express',
+    category: 'supermercado',
+    subcategory: 'alimentos',
+    floor: 'primer piso',
+    zone: 'zona comercial',
+    local: '120',
+    phone: '607 724 5000',
+    hours: 'lunes a sábado de 8 AM a 9 PM, domingos de 9 AM a 8 PM',
+    description: 'Supermercado con variedad de productos alimenticios y del hogar',
+    keywords: ['supermercado', 'exito', 'mercado', 'compras', 'alimentos', 'víveres', 'viveres'],
+    services: ['Frutas y verduras', 'Carnes', 'Lácteos', 'Panadería', 'Licores'],
+    delivery: true,
+    paymentMethods: ['efectivo', 'tarjeta', 'puntos Éxito', 'nequi'],
+    specialties: ['Productos frescos', 'Panadería artesanal', 'Sección gourmet'],
+    promotions: [
+      'Miércoles de frutas y verduras: 20% descuento',
+      'Jueves de carnes: ofertas especiales',
+      'Puntos Éxito: acumula y redime'
+    ]
   }
 ];
 
-// Información general del centro comercial
 export const mallInfo = {
   name: 'Centro Comercial Puente de San Gil',
-  address: 'Calle 10 #15-20, San Gil, Santander',
-  phone: '+576516773436',
-  
-  hours: {
-    general: 'Lunes a Sábado de 10 AM a 9 PM, Domingos de 11 AM a 8 PM',
-    special: {
-      'zona de comidas': 'Hasta las 10 PM todos los días',
-      'cine': 'Hasta las 11 PM todos los días',
-      'supermercado': 'Lunes a Domingo de 8 AM a 10 PM'
-    }
+  shortName: 'Puente de San Gil',
+  address: 'Carrera 25 # 45-10, San Gil, Santander',
+  phone: '607 724 0000',
+  email: 'info@puentedesangil.com',
+  website: 'www.puentedesangil.com',
+  socialMedia: {
+    facebook: '@PuenteDeSanGil',
+    instagram: '@puentesangil',
+    whatsapp: '+57 310 234 5678'
   },
   
+  // Horarios
+  hours: {
+    general: 'lunes a sábado de 10 AM a 9 PM, domingos de 11 AM a 8 PM',
+    extended: 'fechas especiales: hasta 10 PM',
+    holidays: 'días festivos: 11 AM a 7 PM'
+  },
+  
+  // Ubicación y acceso
+  location: {
+    neighborhood: 'Centro',
+    city: 'San Gil',
+    department: 'Santander',
+    landmarks: 'A 2 cuadras del parque principal, frente al Banco de Bogotá',
+    publicTransport: 'Rutas de bus: 1, 3, 5, 7',
+    accessRoads: 'Por la Carrera 25 vía a Barichara'
+  },
+  
+  // Servicios
   services: [
-    'Parqueadero gratuito',
-    'WiFi gratuito',
-    'Baños en cada piso',
-    'Cajeros automáticos',
-    'Zona de comidas',
-    'Cine',
-    'Área de juegos infantiles',
-    'Ascensores y escaleras eléctricas'
+    {
+      name: 'Parqueadero',
+      description: 'Estacionamiento cubierto',
+      location: 'Sótano 1 y 2',
+      hours: '24 horas',
+      cost: 'Primera hora gratis, $2,000 cada hora adicional',
+      capacity: '200 vehículos',
+      details: 'Parqueadero vigilado con cámaras de seguridad'
+    },
+    {
+      name: 'WiFi Gratis',
+      description: 'Internet inalámbrico en todo el mall',
+      network: 'PUENTE_FREE_WIFI',
+      password: 'No requiere',
+      speed: 'Alta velocidad'
+    },
+    {
+      name: 'Cajeros Automáticos',
+      description: 'Red bancaria múltiple',
+      banks: ['Bancolombia', 'Davivienda', 'BBVA', 'Banco de Bogotá'],
+      location: 'Primer piso, zona de servicios',
+      hours: '24 horas'
+    },
+    {
+      name: 'Baños',
+      description: 'Baños públicos limpios',
+      locations: [
+        'Primer piso cerca de Éxito',
+        'Segundo piso zona de restaurantes',
+        'Tercer piso junto al cine'
+      ],
+      features: ['Cambiadores para bebés', 'Accesibilidad para discapacitados']
+    },
+    {
+      name: 'Zona de Juegos Infantiles',
+      description: 'Área recreativa para niños',
+      location: 'Segundo piso, zona central',
+      ages: '2 a 12 años',
+      cost: 'Gratis',
+      hours: 'lunes a domingo de 11 AM a 8 PM',
+      supervision: 'Vigilancia permanente'
+    },
+    {
+      name: 'Sala de Lactancia',
+      description: 'Espacio privado para madres',
+      location: 'Primer piso, junto a información',
+      features: ['Sillas cómodas', 'Cambiador', 'Microondas', 'Privacidad']
+    },
+    {
+      name: 'Puntos de Información',
+      description: 'Asistencia y orientación',
+      locations: ['Entrada principal', 'Segundo piso'],
+      hours: '10 AM a 8 PM',
+      services: ['Información general', 'Objetos perdidos', 'Quejas y sugerencias']
+    },
+    {
+      name: 'Primeros Auxilios',
+      description: 'Atención médica básica',
+      location: 'Primer piso, zona de servicios',
+      hours: '10 AM a 9 PM',
+      services: ['Atención de emergencias', 'Botiquín', 'Enfermera disponible']
+    },
+    {
+      name: 'Seguridad 24/7',
+      description: 'Vigilancia permanente',
+      features: ['Cámaras de seguridad', 'Personal de seguridad', 'Puntos de emergencia'],
+      emergency: 'Botones de pánico en cada piso'
+    }
   ],
   
-  floors: {
-    'primer piso': 'Servicios, bancos, zona de comidas, supermercado',
-    'segundo piso': 'Ropa, zapatos, restaurantes, tecnología',
-    'tercer piso': 'Entretenimiento, cine, zona de juegos'
+  // Eventos y promociones
+  events: [
+    {
+      name: 'Festival Gastronómico',
+      date: 'Cada viernes de febrero',
+      description: 'Degustaciones gratuitas en la zona de restaurantes',
+      participants: 'Todos los restaurantes del mall'
+    },
+    {
+      name: 'Tardes de Cine Familiar',
+      date: 'Domingos 2 PM',
+      description: 'Películas para toda la familia con descuento especial',
+      discount: '30% en boletas'
+    },
+    {
+      name: 'Temporada de Descuentos',
+      date: 'Junio y Diciembre',
+      description: 'Grandes descuentos en todas las tiendas',
+      discount: 'Hasta 70% de descuento'
+    }
+  ],
+  
+  // Promociones generales
+  promotions: [
+    'Tarjeta Cliente Frecuente: Acumula puntos en cada compra',
+    'Parqueo gratis por compras superiores a $100,000',
+    'Descuentos especiales para estudiantes (lunes a miércoles)',
+    'Adultos mayores: 10% descuento en todas las tiendas'
+  ],
+  
+  // Información adicional
+  features: {
+    totalArea: '15,000 m²',
+    floors: 3,
+    stores: 80,
+    restaurants: 12,
+    cinemaScreens: 8,
+    parkingSpaces: 200,
+    dailyVisitors: 5000,
+    accessibility: true,
+    petFriendly: false,
+    smokingAreas: ['Terraza tercer piso']
+  },
+  
+  // Medidas de seguridad
+  safety: {
+    covid: [
+      'Puntos de desinfección en cada entrada',
+      'Aforo controlado',
+      'Ventilación constante'
+    ],
+    general: [
+      'Cámaras de seguridad en todo el mall',
+      'Personal de seguridad 24/7',
+      'Salidas de emergencia señalizadas',
+      'Extintores en cada piso',
+      'Alarma contra incendios'
+    ]
+  },
+  
+  // Cómo llegar
+  directions: {
+    fromBucaramanga: 'Por la vía Bucaramanga-San Gil, 2 horas aproximadamente',
+    fromSocorro: 'Vía Socorro-San Gil, 30 minutos',
+    fromBarichara: 'Vía Barichara-San Gil, 20 minutos',
+    publicTransport: 'Rutas de bus 1, 3, 5, 7 pasan cada 15 minutos',
+    taxi: 'Desde el terminal: $5,000 aproximadamente'
   }
 };

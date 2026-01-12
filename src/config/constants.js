@@ -1,58 +1,91 @@
-// Configuración de voces de Twilio (Por ahora usamos estas, luego cambiaremos a ElevenLabs)
-export const VOICES = {
-  SPANISH_FEMALE: 'Polly.Lupe',
-  SPANISH_MALE: 'Polly.Miguel'
-};
+// src/config/constants.js
 
-export const LANGUAGE = 'es-MX';
-
-// Tiempos de espera
-export const TIMEOUTS = {
-  SPEECH: 5,      // Segundos para que el usuario hable
-  GATHER: 10,     // Segundos máximo de espera total
-  PAUSE: 1        // Pausa entre mensajes
-};
-
-// Mensajes del sistema
-export const MESSAGES = {
-  WELCOME: 'Bienvenido al Centro Comercial Puente de San Gil. Esta llamada es atendida por un asistente con inteligencia artificial. ¿En qué puedo ayudarte?',
-  
-  NO_RESPONSE: 'No escuché tu respuesta. Por favor, intenta de nuevo.',
-  
-  NOT_UNDERSTOOD: 'Disculpa, no entendí bien tu solicitud. ¿Puedes repetir qué necesitas?',
-  
-  GOODBYE: 'Gracias por llamar al Centro Comercial Puente de San Gil. ¡Que tengas un excelente día!',
-  
-  ERROR: 'Disculpa, tuve un problema técnico. Por favor intenta llamar nuevamente.',
-  
-  CONTINUE: '¿Hay algo más en lo que pueda ayudarte?',
-  
-  TRANSFERRING: 'Un momento por favor, te voy a transferir.',
-  
-  TRANSFER_FAILED: 'Lo siento, no pude completar la transferencia. ¿Deseas que intente de nuevo?'
-};
-
-// Estados de la llamada
-export const CALL_STATES = {
-  INIT: 'init',
-  WELCOME: 'welcome',
-  LISTENING: 'listening',
-  PROCESSING: 'processing',
-  RESPONDING: 'responding',
-  TRANSFERRING: 'transferring',
-  END: 'end',
-  ERROR: 'error'
-};
-
-// Intenciones que puede detectar el sistema
 export const INTENTS = {
+  // Búsqueda y ubicación
   BUSCAR_LOCAL: 'buscar_local',
-  HORARIOS: 'horarios',
   UBICACION: 'ubicacion',
+  UBICACION_MALL: 'ubicacion_mall',
+  COMO_LLEGAR: 'como_llegar',
+  
+  // Horarios
+  HORARIOS: 'horarios',
+  HORARIO_MALL: 'horario_mall',
+  HORARIO_LOCAL: 'horario_local',
+  
+  // Contacto y comunicación
   TRANSFERIR: 'transferir',
-  SERVICIOS: 'servicios',
+  NUMERO_TELEFONO: 'numero_telefono',
+  PEDIR_DOMICILIO: 'pedir_domicilio',
+  
+  // Servicios del mall
+  PARQUEADERO: 'parqueadero',
+  PARQUEADERO_COSTO: 'parqueadero_costo',
+  BANOS: 'banos',
+  CAJERO: 'cajero',
+  WIFI: 'wifi',
+  ZONA_JUEGOS: 'zona_juegos',
+  
+  // Categorías de tiendas
+  RESTAURANTES: 'restaurantes',
+  TIENDAS_ROPA: 'tiendas_ropa',
+  TIENDAS_DEPORTES: 'tiendas_deportes',
+  BANCOS: 'bancos',
+  FARMACIAS: 'farmacias',
+  SUPERMERCADO: 'supermercado',
+  
+  // Entretenimiento
+  CINE: 'cine',
+  CINE_CARTELERA: 'cine_cartelera',
+  CINE_HORARIOS: 'cine_horarios',
+  CINE_PRECIOS: 'cine_precios',
+  
+  // Información comercial
+  PROMOCIONES: 'promociones',
   EVENTOS: 'eventos',
+  OFERTAS: 'ofertas',
+  DESCUENTOS: 'descuentos',
+  
+  // Precios y costos
+  PRECIOS_COMIDA: 'precios_comida',
+  MENU_RESTAURANTE: 'menu_restaurante',
+  
+  // Servicios especiales
+  TARJETA_REGALO: 'tarjeta_regalo',
+  SALA_LACTANCIA: 'sala_lactancia',
+  ACCESIBILIDAD: 'accesibilidad',
+  
+  // Seguridad y ayuda
+  EMERGENCIA: 'emergencia',
+  PRIMEROS_AUXILIOS: 'primeros_auxilios',
+  OBJETOS_PERDIDOS: 'objetos_perdidos',
+  QUEJAS: 'quejas',
+  SUGERENCIAS: 'sugerencias',
+  
+  // Control de flujo
   AYUDA: 'ayuda',
+  REPETIR: 'repetir',
   DESPEDIDA: 'despedida',
+  SALUDAR: 'saludar',
+  CONFIRMAR: 'confirmar',
+  NEGAR: 'negar',
   UNKNOWN: 'unknown'
+};
+
+export const CATEGORIES = {
+  RESTAURANTE: 'restaurante',
+  ROPA: 'ropa',
+  DEPORTES: 'deportes',
+  TECNOLOGIA: 'tecnologia',
+  BANCO: 'banco',
+  FARMACIA: 'farmacia',
+  SUPERMERCADO: 'supermercado',
+  CINE: 'cine',
+  ENTRETENIMIENTO: 'entretenimiento',
+  SERVICIOS: 'servicios'
+};
+
+export const RESPONSE_MODES = {
+  SHORT: 'short',      // Respuestas cortas (8-10 seg)
+  NORMAL: 'normal',    // Respuestas normales (12-15 seg)
+  DETAILED: 'detailed' // Respuestas detalladas (20+ seg)
 };

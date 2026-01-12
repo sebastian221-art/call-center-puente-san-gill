@@ -1,7 +1,9 @@
 // src/data/stores.js
 
 export const stores = [
+  // ============================================
   // RESTAURANTES
+  // ============================================
   {
     id: 'crepes-waffles',
     name: 'Crepes & Waffles',
@@ -22,14 +24,15 @@ export const stores = [
     seatingCapacity: 80,
     paymentMethods: ['efectivo', 'tarjeta', 'nequi', 'daviplata'],
     menu: {
-      entradas: ['Palitos de mozzarella', 'Nachos'],
-      principales: ['Crepe de pollo', 'Crepe de champiñones', 'Lasaña'],
-      postres: ['Waffle con helado', 'Crepe de nutella', 'Brownie'],
-      bebidas: ['Limonada', 'Jugo natural', 'Malteada', 'Café']
+      entradas: ['Palitos de mozzarella', 'Nachos', 'Aros de cebolla', 'Dedos de queso'],
+      principales: ['Crepe de pollo', 'Crepe de champiñones', 'Lasaña', 'Crepe de carne'],
+      postres: ['Waffle con helado', 'Crepe de nutella', 'Brownie', 'Cheesecake'],
+      bebidas: ['Limonada natural', 'Jugo natural', 'Malteada', 'Café', 'Té helado']
     },
     promotions: [
       'Combo almuerzo ejecutivo $28,000 (lunes a viernes)',
-      '2x1 en malteadas los miércoles'
+      '2x1 en malteadas los miércoles',
+      'Cumpleañeros: postre gratis con documento'
     ]
   },
   {
@@ -43,21 +46,22 @@ export const stores = [
     phone: '607 724 7890',
     hours: 'todos los días de 10 AM a 9 PM',
     description: 'Sándwiches personalizados y ensaladas frescas',
-    keywords: ['subway', 'sandwich', 'comida rápida', 'ensalada', 'saludable'],
+    keywords: ['subway', 'sandwich', 'comida rápida', 'ensalada', 'saludable', 'sub'],
     priceRange: '$',
     averagePrice: '15000-25000',
-    specialties: ['Sub del día', 'Ensalada personalizada', 'Galletas'],
+    specialties: ['Sub del día', 'Ensalada personalizada', 'Galletas recién horneadas'],
     delivery: true,
     reservations: false,
     paymentMethods: ['efectivo', 'tarjeta'],
     menu: {
-      subs: ['Italiano BMT', 'Pechuga de pavo', 'Atún', 'Pollo teriyaki'],
-      ensaladas: ['César', 'Atún', 'Pollo'],
-      extras: ['Galletas', 'Papas', 'Bebida']
+      subs: ['Italiano BMT', 'Pechuga de pavo', 'Atún', 'Pollo teriyaki', 'Vegetariano'],
+      ensaladas: ['César con pollo', 'Atún', 'Pollo', 'Vegetariana'],
+      extras: ['Galletas', 'Papas chips', 'Bebida']
     },
     promotions: [
-      'Sub del día $12,900',
-      'Combo sub + bebida + galleta $18,900'
+      'Sub del día: $12,900',
+      'Combo sub + bebida + galleta: $18,900',
+      'Martes: 2x1 en subs de 6 pulgadas'
     ]
   },
   {
@@ -71,7 +75,7 @@ export const stores = [
     phone: '607 724 5555',
     hours: 'lunes a domingo de 12 PM a 10 PM',
     description: 'Restaurante de comida italiana, pizzas artesanales y pastas',
-    keywords: ['italiana', 'pizza', 'pasta', 'lasaña', 'italiana'],
+    keywords: ['italiana', 'pizza', 'pasta', 'lasaña', 'italiana', 'italiano'],
     priceRange: '$$',
     averagePrice: '40000-60000',
     specialties: ['Pizza margarita', 'Lasaña bolognesa', 'Ravioles', 'Tiramisú'],
@@ -80,18 +84,21 @@ export const stores = [
     seatingCapacity: 60,
     paymentMethods: ['efectivo', 'tarjeta', 'nequi'],
     menu: {
-      pizzas: ['Margarita', 'Pepperoni', 'Cuatro quesos', 'Hawaiana'],
-      pastas: ['Lasaña', 'Ravioles', 'Fetuccini alfredo', 'Carbonara'],
-      postres: ['Tiramisú', 'Panna cotta', 'Helado'],
-      bebidas: ['Vino', 'Limonada', 'Gaseosa']
+      pizzas: ['Margarita', 'Pepperoni', 'Cuatro quesos', 'Hawaiana', 'Vegetariana'],
+      pastas: ['Lasaña', 'Ravioles', 'Fetuccini alfredo', 'Carbonara', 'Boloñesa'],
+      postres: ['Tiramisú', 'Panna cotta', 'Helado italiano', 'Cannoli'],
+      bebidas: ['Vino tinto', 'Vino blanco', 'Limonada', 'Gaseosa', 'Café expreso']
     },
     promotions: [
       '2x1 en pizzas familiares los martes',
-      'Combo pasta + postre + bebida $45,000'
+      'Combo pasta + postre + bebida: $45,000',
+      'Cumpleañeros: 20% descuento con documento'
     ]
   },
   
+  // ============================================
   // TIENDAS DE ROPA
+  // ============================================
   {
     id: 'nike',
     name: 'Nike',
@@ -114,7 +121,8 @@ export const stores = [
     categories: ['Calzado', 'Ropa', 'Accesorios'],
     promotions: [
       'Descuento 20% en colecciones pasadas',
-      'Meses sin intereses con tarjetas participantes'
+      'Meses sin intereses con tarjetas participantes',
+      '3x2 en medias deportivas'
     ]
   },
   {
@@ -128,7 +136,7 @@ export const stores = [
     phone: '607 724 1235',
     hours: 'lunes a sábado de 10 AM a 8 PM, domingos de 11 AM a 7 PM',
     description: 'Ropa y calzado deportivo de alto rendimiento',
-    keywords: ['adidas', 'tenis', 'deportivo', 'futbol', 'running'],
+    keywords: ['adidas', 'tenis', 'deportivo', 'futbol', 'running', 'soccer'],
     priceRange: '$$$',
     averagePrice: '140000-380000',
     specialties: ['Tenis de fútbol', 'Ropa deportiva', 'Mochilas'],
@@ -138,7 +146,8 @@ export const stores = [
     paymentMethods: ['efectivo', 'tarjeta', 'crédito'],
     promotions: [
       'Descuento 15% en segunda compra',
-      'Black Friday: hasta 40% de descuento'
+      'Black Friday: hasta 40% de descuento',
+      'Estudiantes: 10% descuento con carnet'
     ]
   },
   {
@@ -161,7 +170,8 @@ export const stores = [
     paymentMethods: ['efectivo', 'tarjeta', 'crédito'],
     promotions: [
       'Nueva colección cada mes',
-      'Rebajas de fin de temporada hasta 50%'
+      'Rebajas de fin de temporada hasta 50%',
+      'Cambios sin costo dentro de 30 días'
     ]
   },
   {
@@ -183,11 +193,14 @@ export const stores = [
     paymentMethods: ['efectivo', 'tarjeta'],
     promotions: [
       'Descuentos especiales para estudiantes',
-      'Programa de reciclaje: trae ropa usada y recibe cupón'
+      'Programa de reciclaje: trae ropa usada y recibe cupón 15%',
+      'Miembros H&M: 10% descuento permanente'
     ]
   },
   
+  // ============================================
   // BANCOS Y SERVICIOS FINANCIEROS
+  // ============================================
   {
     id: 'davivienda',
     name: 'Banco Davivienda',
@@ -199,12 +212,12 @@ export const stores = [
     phone: '607 724 9999',
     hours: 'lunes a viernes de 8 AM a 5 PM, sábados de 9 AM a 12 PM',
     description: 'Servicios bancarios completos, cajeros automáticos',
-    keywords: ['banco', 'davivienda', 'cajero', 'cuenta', 'tarjeta', 'crédito', 'retiro'],
+    keywords: ['banco', 'davivienda', 'cajero', 'cuenta', 'tarjeta', 'crédito', 'retiro', 'daviplata'],
     services: ['Apertura de cuentas', 'Créditos', 'Tarjetas', 'Retiros', 'Consignaciones'],
     atmAvailable: true,
     atmHours: '24 horas',
     paymentMethods: ['efectivo'],
-    specialties: ['Cuenta de ahorros', 'Tarjeta de crédito DaviPlata', 'Créditos']
+    specialties: ['Cuenta de ahorros', 'Tarjeta de crédito', 'DaviPlata', 'Créditos personales']
   },
   {
     id: 'bancolombia',
@@ -221,10 +234,13 @@ export const stores = [
     services: ['Apertura de cuentas', 'Nequi', 'Tarjetas', 'Créditos'],
     atmAvailable: true,
     atmHours: '24 horas',
-    paymentMethods: ['efectivo']
+    paymentMethods: ['efectivo'],
+    specialties: ['Cuenta de ahorros', 'Nequi', 'Tarjetas de crédito', 'Créditos']
   },
   
-  // ENTRETENIMIENTO
+  // ============================================
+  // ENTRETENIMIENTO - CINE CON CARTELERA
+  // ============================================
   {
     id: 'cinemark',
     name: 'Cinemark',
@@ -262,19 +278,55 @@ export const stores = [
       'Combo pareja: crispetas grande + 2 gaseosas $25,000',
       'Combo familiar: crispetas jumbo + 4 gaseosas + nachos $45,000'
     ],
+    // ← CARTELERA ACTUALIZADA CON DETALLES
     cartelera: [
-      'Película 1 - Acción (PG-13)',
-      'Película 2 - Animación (G)',
-      'Película 3 - Drama (R)',
-      'Película 4 - Comedia (PG)'
+      {
+        titulo: 'Acción Extrema',
+        genero: 'Acción y Aventura',
+        clasificacion: 'PG-13',
+        duracion: '120 minutos',
+        horarios: ['2:00 PM', '5:00 PM', '8:00 PM'],
+        formato: ['2D', '3D'],
+        descripcion: 'Aventuras explosivas con efectos especiales'
+      },
+      {
+        titulo: 'Aventuras Mágicas',
+        genero: 'Animación Familiar',
+        clasificacion: 'G',
+        duracion: '95 minutos',
+        horarios: ['12:00 PM', '3:00 PM', '6:00 PM'],
+        formato: ['2D', '3D'],
+        descripcion: 'Diversión para toda la familia'
+      },
+      {
+        titulo: 'Destino Final',
+        genero: 'Drama',
+        clasificacion: 'R',
+        duracion: '135 minutos',
+        horarios: ['4:00 PM', '7:00 PM', '10:00 PM'],
+        formato: ['2D'],
+        descripcion: 'Drama intenso solo para adultos'
+      },
+      {
+        titulo: 'Risas Sin Control',
+        genero: 'Comedia',
+        clasificacion: 'PG',
+        duracion: '105 minutos',
+        horarios: ['1:00 PM', '4:00 PM', '7:00 PM'],
+        formato: ['2D'],
+        descripcion: 'Comedia para toda la familia'
+      }
     ],
     promotions: [
       'Miércoles de cine: boletas 2D a $10,000',
-      'Combo estudiante: boleta + combo individual $22,000'
+      'Combo estudiante: boleta + combo individual $22,000',
+      'Adultos mayores: 20% descuento todos los días'
     ]
   },
   
+  // ============================================
   // FARMACIAS
+  // ============================================
   {
     id: 'cruz-verde',
     name: 'Drogas La Rebaja',
@@ -290,14 +342,17 @@ export const stores = [
     services: ['Medicamentos con fórmula', 'Productos de belleza', 'Cuidado personal', 'Inyectología'],
     delivery: true,
     paymentMethods: ['efectivo', 'tarjeta', 'nequi', 'daviplata'],
-    specialties: ['Medicamentos genéricos', 'Productos naturales', 'Cosméticos'],
+    specialties: ['Medicamentos genéricos', 'Productos naturales', 'Cosméticos', 'Inyecciones'],
     promotions: [
       'Descuento 20% para adultos mayores',
-      '3x2 en productos seleccionados'
+      '3x2 en productos seleccionados',
+      'Domicilio gratis en compras mayores a $50,000'
     ]
   },
   
+  // ============================================
   // SUPERMERCADO
+  // ============================================
   {
     id: 'exito',
     name: 'Éxito Express',
@@ -309,18 +364,23 @@ export const stores = [
     phone: '607 724 5000',
     hours: 'lunes a sábado de 8 AM a 9 PM, domingos de 9 AM a 8 PM',
     description: 'Supermercado con variedad de productos alimenticios y del hogar',
-    keywords: ['supermercado', 'exito', 'mercado', 'compras', 'alimentos', 'víveres', 'viveres'],
-    services: ['Frutas y verduras', 'Carnes', 'Lácteos', 'Panadería', 'Licores'],
+    keywords: ['supermercado', 'exito', 'éxito', 'mercado', 'compras', 'alimentos', 'víveres', 'viveres'],
+    services: ['Frutas y verduras', 'Carnes', 'Lácteos', 'Panadería', 'Licores', 'Productos del hogar'],
     delivery: true,
     paymentMethods: ['efectivo', 'tarjeta', 'puntos Éxito', 'nequi'],
-    specialties: ['Productos frescos', 'Panadería artesanal', 'Sección gourmet'],
+    specialties: ['Productos frescos', 'Panadería artesanal', 'Sección gourmet', 'Frutas orgánicas'],
     promotions: [
       'Miércoles de frutas y verduras: 20% descuento',
       'Jueves de carnes: ofertas especiales',
-      'Puntos Éxito: acumula y redime'
+      'Puntos Éxito: acumula y redime',
+      'Domicilio gratis en compras mayores a $80,000'
     ]
   }
 ];
+
+// ============================================
+// INFORMACIÓN DEL CENTRO COMERCIAL
+// ============================================
 
 export const mallInfo = {
   name: 'Centro Comercial Puente de San Gil',
@@ -352,7 +412,7 @@ export const mallInfo = {
     accessRoads: 'Por la Carrera 25 vía a Barichara'
   },
   
-  // Servicios
+  // Servicios detallados
   services: [
     {
       name: 'Parqueadero',
@@ -361,7 +421,7 @@ export const mallInfo = {
       hours: '24 horas',
       cost: 'Primera hora gratis, $2,000 cada hora adicional',
       capacity: '200 vehículos',
-      details: 'Parqueadero vigilado con cámaras de seguridad'
+      details: 'Parqueadero vigilado con cámaras de seguridad. Por compras mayores a $100,000 el parqueo es gratis'
     },
     {
       name: 'WiFi Gratis',
@@ -424,19 +484,29 @@ export const mallInfo = {
     }
   ],
   
-  // Eventos y promociones
+  // Eventos actuales
   events: [
     {
       name: 'Festival Gastronómico',
-      date: 'Cada viernes de febrero',
+      date: 'Todos los viernes',
+      time: '5:00 PM a 8:00 PM',
       description: 'Degustaciones gratuitas en la zona de restaurantes',
-      participants: 'Todos los restaurantes del mall'
+      participants: 'Todos los restaurantes del mall',
+      location: 'Segundo piso, zona de restaurantes'
     },
     {
       name: 'Tardes de Cine Familiar',
-      date: 'Domingos 2 PM',
+      date: 'Domingos 2:00 PM',
       description: 'Películas para toda la familia con descuento especial',
-      discount: '30% en boletas'
+      discount: '30% en boletas',
+      location: 'Cinemark, tercer piso'
+    },
+    {
+      name: 'Show de Música en Vivo',
+      date: 'Sábados 4:00 PM',
+      description: 'Conciertos gratuitos en la plaza central',
+      location: 'Primer piso, plaza central',
+      cost: 'Entrada libre'
     },
     {
       name: 'Temporada de Descuentos',
@@ -450,8 +520,9 @@ export const mallInfo = {
   promotions: [
     'Tarjeta Cliente Frecuente: Acumula puntos en cada compra',
     'Parqueo gratis por compras superiores a $100,000',
-    'Descuentos especiales para estudiantes (lunes a miércoles)',
-    'Adultos mayores: 10% descuento en todas las tiendas'
+    'Descuentos especiales para estudiantes (lunes a miércoles) 10-15%',
+    'Adultos mayores: 10% descuento en todas las tiendas',
+    'Festival gastronómico: viernes 5-8 PM degustaciones gratis'
   ],
   
   // Información adicional
@@ -480,7 +551,8 @@ export const mallInfo = {
       'Personal de seguridad 24/7',
       'Salidas de emergencia señalizadas',
       'Extintores en cada piso',
-      'Alarma contra incendios'
+      'Alarma contra incendios',
+      'Botones de pánico'
     ]
   },
   

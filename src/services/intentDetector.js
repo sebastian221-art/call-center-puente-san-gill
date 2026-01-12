@@ -3,8 +3,9 @@
 import { INTENTS, CATEGORIES } from '../config/constants.js';
 import { stores, mallInfo } from '../data/stores.js';
 import { logger } from '../utils/logger.js';
+
 /**
- * Detecta la intención del usuario con 25+ intenciones
+ * Detecta la intención del usuario con 35+ intenciones
  * Sistema mejorado con detección más precisa
  */
 export class IntentDetector {
@@ -173,7 +174,16 @@ export class IntentDetector {
       return { intent: INTENTS.DESCUENTOS, confidence: 0.85, entities: {} };
     }
     
-    // 9. Precios y menús
+    // 9. Precios y menús (ANTES de categorías y búsqueda) ← MEJORADO
+    if (this.isPreciosComida(normalizedText)) {
+      const store = this.extractStore(normalizedText);
+      return {
+        intent: INTENTS.PRECIOS_COMIDA,
+        confidence: 0.88,
+        entities: store
+      };
+    }
+    
     if (this.isMenuRestaurante(normalizedText)) {
       const store = this.extractStore(normalizedText);
       return {
@@ -181,10 +191,6 @@ export class IntentDetector {
         confidence: 0.85,
         entities: store
       };
-    }
-    
-    if (this.isPreciosComida(normalizedText)) {
-      return { intent: INTENTS.PRECIOS_COMIDA, confidence: 0.8, entities: {} };
     }
     
     // 10. Categorías de tiendas
@@ -306,7 +312,6 @@ export class IntentDetector {
       'sí', 'si', 'claro', 'por supuesto', 'ok', 'okay',
       'vale', 'bueno', 'dale', 'listo', 'correcto', 'exacto'
     ];
-    // Debe ser respuesta corta
     return text.split(' ').length <= 3 && keywords.some(kw => text.includes(kw));
   }
   
@@ -396,7 +401,6 @@ export class IntentDetector {
       'número', 'numero', 'teléfono', 'telefono', 'celular', 'contacto',
       'cuál es el número', 'cual es el numero', 'dame el número', 'dame el numero'
     ];
-    // Debe tener "número" o "teléfono" pero NO "transferir" o "llamar"
     return keywords.some(kw => text.includes(kw)) &&
            !text.includes('transferir') && !text.includes('comunicar') &&
            !text.includes('hablar con');
@@ -438,7 +442,7 @@ export class IntentDetector {
   isWifi(text) {
     const keywords = [
       'wifi', 'wi-fi', 'internet', 'conexión', 'conexion',
-      'red wifi', 'contraseña wifi', 'contraseña wifi', 'clave wifi'
+      'red wifi', 'contraseña wifi', 'clave wifi'
     ];
     return keywords.some(kw => text.includes(kw));
   }
@@ -478,7 +482,8 @@ export class IntentDetector {
   isCinePrecios(text) {
     const keywords = [
       'precio cine', 'cuánto cuesta cine', 'cuanto cuesta cine',
-      'valor boleta', 'precio boleta', 'tarifa cine', 'boletas cine'
+      'valor boleta', 'precio boleta', 'tarifa cine', 'boletas cine',
+      'cuánto vale cine', 'cuanto vale cine'
     ];
     return keywords.some(kw => text.includes(kw));
   }
@@ -486,7 +491,8 @@ export class IntentDetector {
   isCineCartelera(text) {
     const keywords = [
       'cartelera', 'qué películas', 'que peliculas', 'películas',
-      'peliculas', 'qué dan', 'que dan', 'qué hay en cine', 'que hay en cine'
+      'peliculas', 'qué dan', 'que dan', 'qué hay en cine', 'que hay en cine',
+      'qué pasan', 'que pasan', 'cuáles películas', 'cuales peliculas'
     ];
     return keywords.some(kw => text.includes(kw));
   }
@@ -494,7 +500,7 @@ export class IntentDetector {
   isCineHorarios(text) {
     const keywords = [
       'horario cine', 'horarios cine', 'funciones cine',
-      'a qué hora cine', 'a que hora cine'
+      'a qué hora cine', 'a que hora cine', 'cuando cine'
     ];
     return keywords.some(kw => text.includes(kw));
   }
@@ -536,18 +542,33 @@ export class IntentDetector {
   isMenuRestaurante(text) {
     const keywords = [
       'menú', 'menu', 'carta', 'qué venden', 'que venden',
-      'qué tienen', 'que tienen', 'platos', 'comidas'
+      'qué tienen', 'que tienen', 'platos', 'comidas', 'qué comen',
+      'que comen', 'qué sirven', 'que sirven'
     ];
     return keywords.some(kw => text.includes(kw));
   }
   
+  // ← MEJORADO
   isPreciosComida(text) {
     const keywords = [
-      'precio comida', 'cuánto cuesta comer', 'cuanto cuesta comer',
-      'precios restaurante', 'cuánto vale', 'cuanto vale'
+      'precio', 'precios', 'cuánto cuesta', 'cuanto cuesta',
+      'valor', 'valores', 'cuánto vale', 'cuanto vale',
+      'rango de precio', 'costo', 'costos', 'cuánto sale', 'cuanto sale'
     ];
-    return keywords.some(kw => text.includes(kw)) && 
-           (text.includes('comida') || text.includes('comer') || text.includes('restaurante'));
+    
+    // Si tiene keyword de precio
+    const hasPriceKeyword = keywords.some(kw => text.includes(kw));
+    
+    if (!hasPriceKeyword) return false;
+    
+    // Verificar si menciona restaurante/comida
+    const store = this.extractStore(text);
+    const isRestaurant = store.storeData?.category === 'restaurante';
+    const mentionsFood = text.includes('comida') || text.includes('comer') || 
+                         text.includes('restaurante') || text.includes('almuerzo') ||
+                         text.includes('cena') || text.includes('comidas');
+    
+    return isRestaurant || mentionsFood;
   }
   
   isRestaurantes(text) {
@@ -606,7 +627,6 @@ export class IntentDetector {
   
   isHorarioLocal(text) {
     const keywords = ['horario', 'hora', 'abre', 'cierra', 'abierto', 'cerrado'];
-    // Debe tener keyword de horario Y nombre de tienda
     const hasHorarioKeyword = keywords.some(kw => text.includes(kw));
     const store = this.extractStore(text);
     return hasHorarioKeyword && store.storeName;
@@ -669,12 +689,11 @@ export class IntentDetector {
   extractStore(text) {
     const normalizedText = text.toLowerCase();
     
-    // Buscar coincidencias con nombres y keywords de locales
     for (const store of stores) {
-      // Buscar nombre exacto (incluyendo variaciones)
       const nameVariations = [
         store.name.toLowerCase(),
         store.name.toLowerCase().replace(/&/g, 'y'),
+        store.name.toLowerCase().replace(/&/g, 'and'),
         store.name.toLowerCase().replace(/\s+/g, '')
       ];
       
@@ -688,7 +707,6 @@ export class IntentDetector {
         }
       }
       
-      // Buscar keywords
       if (store.keywords) {
         for (const keyword of store.keywords) {
           if (normalizedText.includes(keyword.toLowerCase())) {

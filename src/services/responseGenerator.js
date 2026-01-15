@@ -6,214 +6,449 @@ import { responseTemplates, getRandomResponse, fillTemplate } from '../data/resp
 import { logger } from '../utils/logger.js';
 
 /**
- * ResponseGenerator - ULTRA OPTIMIZADO PARA MÁXIMO AHORRO
+ * ResponseGenerator V4 - INTELIGENCIA CONTEXTUAL
  * 
- * Mejoras críticas implementadas:
- * ✅ Respuestas ULTRA CORTAS (máximo 15 palabras)
- * ✅ Progresivas (pregunta qué aspecto específico)
- * ✅ Números hablados correctamente (agrupados)
- * ✅ Sin palabras de relleno
- * ✅ Más natural y humano
- * ✅ 100% independiente (sin estado compartido)
- * ✅ AHORRA TIEMPO = AHORRA DINERO
+ * Filosofía:
+ * ✅ Responde lo que preguntan + ANTICIPA siguiente necesidad lógica
+ * ✅ Ofrece ayuda relevante según contexto
+ * ✅ Detecta intención real del usuario
  * 
- * Cada instancia es INDEPENDIENTE para permitir 100 llamadas simultáneas
+ * Lógica Inteligente:
+ * - Pregunta ubicación → Ofrece teléfono/transferir
+ * - Pregunta teléfono → Ofrece transferir directamente
+ * - Pregunta horario → Ofrece ubicación si es para ir físicamente
+ * - Busca restaurante → Probablemente quiere pedir domicilio
+ * - Busca tienda → Probablemente quiere ir o hablar
  */
 export class ResponseGenerator {
   
   constructor() {
-    // Sin estado compartido - cada instancia es independiente
     this.lastResponses = [];
-    this.maxWordsPerResponse = 15;
-    this.costPerSecond = 0.4; // Palabras por segundo
+    this.conversationContext = {
+      hasGreeted: false,
+      questionsAsked: 0,
+      lastIntent: null,
+      currentStore: null,
+      userGoal: null // 'visit', 'call', 'order', 'info'
+    };
   }
   
   generateResponse(intent, entities = {}, context = {}) {
     logger.debug('Generando respuesta', { intent, entities });
     
+    // Actualizar contexto y detectar objetivo del usuario
+    this.conversationContext.lastIntent = intent;
+    this.conversationContext.questionsAsked++;
+    if (entities.storeName) {
+      this.conversationContext.currentStore = entities.storeName;
+    }
+    
+    // Detectar qué quiere hacer el usuario
+    this._detectUserGoal(intent, entities);
+    
     // Generar respuesta base
     let response = this._generateBaseResponse(intent, entities, context);
     
-    // Optimizar respuesta (acortar al máximo)
-    response = this._optimizeResponse(response, intent);
+    // Agregar oferta inteligente según contexto
+    response = this._addSmartOffer(response, intent, entities);
     
-    // Agregar follow-up corto si aplica
-    if (!this._isClosingIntent(intent) && typeof response === 'string') {
-      response = this._addShortFollowUp(response);
+    return response;
+  }
+  
+  /**
+   * Detecta la intención real del usuario basado en el contexto
+   */
+  _detectUserGoal(intent, entities) {
+    const s = entities.storeData;
+    
+    // Si pregunta por restaurante → probablemente quiere pedir
+    if (s && s.category === 'restaurante') {
+      if ([INTENTS.BUSCAR_LOCAL, INTENTS.UBICACION, INTENTS.NUMERO_TELEFONO].includes(intent)) {
+        this.conversationContext.userGoal = 'order';
+        return;
+      }
+    }
+    
+    // Si pregunta teléfono → quiere llamar
+    if (intent === INTENTS.NUMERO_TELEFONO) {
+      this.conversationContext.userGoal = 'call';
+      return;
+    }
+    
+    // Si pregunta ubicación → quiere visitar
+    if ([INTENTS.UBICACION, INTENTS.BUSCAR_LOCAL].includes(intent)) {
+      this.conversationContext.userGoal = 'visit';
+      return;
+    }
+    
+    // Si pregunta horario → quiere verificar antes de ir
+    if ([INTENTS.HORARIO_LOCAL, INTENTS.HORARIOS].includes(intent) && entities.storeName) {
+      this.conversationContext.userGoal = 'visit';
+      return;
+    }
+    
+    this.conversationContext.userGoal = 'info';
+  }
+  
+  /**
+   * Agrega oferta inteligente según contexto
+   */
+  _addSmartOffer(response, intent, entities) {
+    if (typeof response === 'object') {
+      return response; // Ya es una acción (transferir)
+    }
+    
+    const s = entities.storeData;
+    const goal = this.conversationContext.userGoal;
+    
+    // NO agregar ofertas en:
+    if (this._shouldNotOffer(intent, response)) {
+      return response;
+    }
+    
+    // ============================================
+    // OFERTAS INTELIGENTES SEGÚN CONTEXTO
+    // ============================================
+    
+    // 1. RESTAURANTES - Ofrecer domicilio o transferir
+    if (s && s.category === 'restaurante') {
+      if (intent === INTENTS.BUSCAR_LOCAL || intent === INTENTS.UBICACION) {
+        if (s.delivery) {
+          return response + ' ¿Quieres que te comunique para pedir domicilio?';
+        } else {
+          return response + ' ¿Te paso con ellos para que consultes?';
+        }
+      }
+      
+      if (intent === INTENTS.HORARIO_LOCAL) {
+        return response + ' ¿Necesitas que te comunique con ellos?';
+      }
+      
+      if (intent === INTENTS.NUMERO_TELEFONO) {
+        return response + ' ¿Te comunico directamente?';
+      }
+    }
+    
+    // 2. TIENDAS (no restaurantes) - Ofrecer transferir o ubicación
+    if (s && s.category !== 'restaurante' && s.category !== 'banco') {
+      if (intent === INTENTS.BUSCAR_LOCAL) {
+        return response + ' ¿Quieres el teléfono o que te comunique?';
+      }
+      
+      if (intent === INTENTS.UBICACION) {
+        return response + ' ¿Necesitas el horario o te comunico con ellos?';
+      }
+      
+      if (intent === INTENTS.HORARIO_LOCAL) {
+        return response + ' ¿Te ayudo con algo más del local?';
+      }
+      
+      if (intent === INTENTS.NUMERO_TELEFONO) {
+        return response + ' ¿Te transfiero directamente?';
+      }
+    }
+    
+    // 3. BANCOS - Solo info, no transferir
+    if (s && s.category === 'banco') {
+      if (intent === INTENTS.BUSCAR_LOCAL || intent === INTENTS.UBICACION) {
+        return response + ' ¿Necesitas el horario de atención?';
+      }
+    }
+    
+    // 4. CATEGORÍAS (lista de tiendas) - Ofrecer detalles
+    if ([INTENTS.RESTAURANTES, INTENTS.TIENDAS_ROPA, INTENTS.TIENDAS_DEPORTES].includes(intent)) {
+      // Ya tienen pregunta incorporada, no agregar más
+      return response;
+    }
+    
+    // 5. SERVICIOS DEL MALL - Ocasionalmente ofrecer más ayuda
+    if ([INTENTS.PARQUEADERO, INTENTS.WIFI, INTENTS.BANOS, INTENTS.CAJERO].includes(intent)) {
+      if (Math.random() < 0.3) { // Solo 30% del tiempo
+        return response + ' ¿Algo más en lo que te ayude?';
+      }
+      return response;
+    }
+    
+    // 6. INFORMACIÓN GENERAL - No agregar nada
+    if ([INTENTS.HORARIO_MALL, INTENTS.UBICACION_MALL, INTENTS.COMO_LLEGAR].includes(intent)) {
+      return response;
+    }
+    
+    // Default: ocasionalmente ofrecer ayuda general
+    if (Math.random() < 0.25 && !response.includes('?')) {
+      return response + ' ¿Algo más?';
     }
     
     return response;
   }
   
   /**
-   * Genera respuesta base según intención
+   * Determina si NO debe ofrecer ayuda adicional
    */
+  _shouldNotOffer(intent, response) {
+    // Ya tiene pregunta
+    if (response.includes('?')) {
+      return true;
+    }
+    
+    // Es despedida o emergencia
+    if ([INTENTS.DESPEDIDA, INTENTS.EMERGENCIA, INTENTS.PRIMEROS_AUXILIOS].includes(intent)) {
+      return true;
+    }
+    
+    // Es confirmación o negación
+    if ([INTENTS.CONFIRMAR, INTENTS.NEGAR].includes(intent)) {
+      return true;
+    }
+    
+    // Respuesta muy corta (< 8 palabras)
+    if (response.split(' ').length < 8) {
+      return true;
+    }
+    
+    return false;
+  }
+  
   _generateBaseResponse(intent, entities, context) {
     switch (intent) {
+      
       // ============================================
-      // CONTROL DE FLUJO (ULTRA CORTO)
+      // SALUDOS - Cálido pero directo
       // ============================================
       case INTENTS.SALUDAR:
-        return this._pickRandom([
-          'Centro Comercial Puente. ¿Qué necesitas?',
-          'Hola. ¿En qué ayudo?',
-          'Puente San Gil. ¿Te ayudo?'
-        ]);
+        if (!this.conversationContext.hasGreeted) {
+          this.conversationContext.hasGreeted = true;
+          return this._pickRandom([
+            'Hola, bienvenido al Centro Comercial Puente. ¿En qué te puedo ayudar?',
+            'Buen día, hablas con el Puente de San Gil. ¿Qué necesitas?',
+            'Hola, soy el asistente del Centro Comercial Puente. ¿Qué buscas?'
+          ]);
+        }
+        return '¿Qué más necesitas?';
       
       case INTENTS.DESPEDIDA:
-        return this._pickRandom(['¡Hasta pronto!', '¡Chao!', '¡Nos vemos!']);
+        return this._pickRandom([
+          'Perfecto. Que tengas un excelente día.',
+          'Gracias por llamar. ¡Hasta pronto!',
+          'Que tengas buen día. Te esperamos en el Puente.'
+        ]);
       
       case INTENTS.CONFIRMAR:
-        return this._pickRandom(['Perfecto', 'Listo', 'Ok', 'Dale']);
+        return this._pickRandom([
+          'Perfecto. ¿Algo más?',
+          'Listo. ¿Qué más necesitas?',
+          'Excelente. ¿Te ayudo con otra cosa?'
+        ]);
       
       case INTENTS.NEGAR:
-        return 'Ok';
+        return this._pickRandom([
+          'Ok, perfecto.',
+          'Entendido. Cualquier cosa me avisas.',
+          'Dale, estoy aquí si necesitas algo más.'
+        ]);
       
       case INTENTS.REPETIR:
-        return context.lastResponse || 'No hay info previa';
+        return context.lastResponse ? 
+               `Claro: ${context.lastResponse}` : 
+               'Perdón, ¿qué necesitas? No tengo la info anterior.';
       
       case INTENTS.AYUDA:
-        return 'Pregunta sobre tiendas, horarios, servicios o eventos';
+        return 'Te ayudo con ubicación de tiendas, horarios, servicios del centro comercial, o te comunico con algún local. ¿Qué necesitas?';
       
       // ============================================
-      // EMERGENCIAS (ULTRA CORTO)
+      // EMERGENCIAS - Directo y útil
       // ============================================
       case INTENTS.EMERGENCIA:
-        return 'Emergencia: primer piso, seguridad 24/7';
+        return 'Ve al punto de seguridad en primer piso. Disponible 24/7.';
       
       case INTENTS.PRIMEROS_AUXILIOS:
-        return 'Primeros auxilios: primer piso, zona servicios';
+        return 'Primeros auxilios en primer piso, zona de servicios. Enfermera de 10 AM a 9 PM.';
       
       case INTENTS.OBJETOS_PERDIDOS:
-        return 'Objetos perdidos: punto información, primer piso';
+        return 'Punto de información, primer piso. Abierto de 10 AM a 8 PM.';
       
       case INTENTS.QUEJAS:
       case INTENTS.SUGERENCIAS:
-        return 'Administración: primer piso. Lun-vie 9AM-6PM';
+        return 'Administración, primer piso. Lunes a viernes de 9 AM a 6 PM. O escribe a info@puentedesangil.com';
       
       // ============================================
-      // BÚSQUEDA Y UBICACIÓN (PROGRESIVO)
+      // UBICACIÓN - Solo ubicación base
       // ============================================
       case INTENTS.BUSCAR_LOCAL:
-        return this._responseBuscarLocal(entities);
+        if (!entities.storeName) {
+          return '¿Qué tienda o restaurante buscas?';
+        }
+        const s1 = entities.storeData;
+        return `${s1.name} está en ${s1.floor}, ${s1.zone}, local ${s1.local}.`;
       
       case INTENTS.UBICACION:
-        return this._responseUbicacion(entities);
+        if (!entities.storeName) {
+          return 'Carrera 25 número 45-10, San Gil. Dos cuadras del parque principal.';
+        }
+        const s2 = entities.storeData;
+        return `${s2.name} está en ${s2.floor}, ${s2.zone}, local ${s2.local}.`;
       
       case INTENTS.UBICACION_MALL:
-        return 'Carrera 25 #45-10, San Gil. Dos cuadras del parque';
+        return 'Carrera 25 número 45-10, San Gil. A dos cuadras del parque principal.';
       
       case INTENTS.COMO_LLEGAR:
-        return 'Terminal: 5 min taxi. Rutas 1,3,5,7';
+        return 'Desde el terminal: 5 minutos en taxi, unos 5 mil pesos. O toma rutas de bus 1, 3, 5 o 7.';
       
       // ============================================
-      // HORARIOS (ULTRA CORTO)
+      // HORARIOS - Solo horarios
       // ============================================
       case INTENTS.HORARIO_MALL:
-        return 'Lun-sáb 10AM-9PM. Dom 11AM-8PM';
+        return 'Lunes a sábado de 10 AM a 9 PM. Domingos de 11 AM a 8 PM.';
       
       case INTENTS.HORARIO_LOCAL:
-        return this._responseHorarioLocal(entities);
+        if (!entities.storeName) {
+          return '¿De qué local necesitas el horario?';
+        }
+        const s3 = entities.storeData;
+        return `${s3.name} abre ${s3.hours}.`;
       
       case INTENTS.HORARIOS:
-        return entities.storeName ? 
-               this._responseHorarioLocal(entities) : 
-               'Lun-sáb 10AM-9PM. Dom 11AM-8PM';
+        if (entities.storeName) {
+          const s = entities.storeData;
+          return `${s.name} abre ${s.hours}.`;
+        }
+        return 'El mall abre lunes a sábado de 10 AM a 9 PM, domingos de 11 a 8.';
       
       // ============================================
-      // CONTACTO (PROGRESIVO)
+      // TELÉFONO - Solo teléfono
       // ============================================
       case INTENTS.NUMERO_TELEFONO:
-        return this._responseNumeroTelefono(entities);
-      
-      case INTENTS.TRANSFERIR:
-        return this._responseTransferir(entities);
-      
-      case INTENTS.PEDIR_DOMICILIO:
-        return this._responsePedirDomicilio(entities);
+        if (!entities.storeName) {
+          return '¿El teléfono de qué tienda necesitas?';
+        }
+        const s4 = entities.storeData;
+        const phone = this._formatPhone(s4.phone);
+        return `${s4.name}: ${phone}`;
       
       // ============================================
-      // SERVICIOS DEL MALL (ULTRA CORTO)
+      // TRANSFERIR - Acción directa
+      // ============================================
+      case INTENTS.TRANSFERIR:
+        if (!entities.storeName) {
+          return '¿Con qué tienda te comunico?';
+        }
+        const s5 = entities.storeData;
+        return {
+          message: `Te comunico con ${s5.name}. Un momento.`,
+          transferTo: s5.phone,
+          storeName: s5.name,
+          action: 'transfer'
+        };
+      
+      // ============================================
+      // DOMICILIO - Progresivo
+      // ============================================
+      case INTENTS.PEDIR_DOMICILIO:
+        if (!entities.storeName) {
+          return '¿De qué restaurante? Tenemos Crepes & Waffles, Subway y La Toscana.';
+        }
+        const s6 = entities.storeData;
+        
+        if (s6.category !== 'restaurante') {
+          return `${s6.name} no es restaurante. Los que tienen domicilio son Crepes, Subway y Toscana.`;
+        }
+        
+        if (!s6.delivery) {
+          return `${s6.name} no hace domicilios. Llámales al ${this._formatPhone(s6.phone)} para confirmar.`;
+        }
+        
+        return {
+          message: `Te comunico con ${s6.name} para tu pedido. Un momento.`,
+          transferTo: s6.phone,
+          storeName: s6.name,
+          action: 'transfer'
+        };
+      
+      // ============================================
+      // SERVICIOS - Concisos
       // ============================================
       case INTENTS.PARQUEADERO:
-        return 'Sótanos 1 y 2. Primera hora gratis';
+        return 'Sótanos 1 y 2, abierto 24 horas. Primera hora gratis, luego 2 mil por hora.';
       
       case INTENTS.PARQUEADERO_COSTO:
-        return 'Primera hora gratis. Luego 2 mil/hora';
+        return 'Primera hora gratis. Luego 2 mil pesos por hora. Si compras más de 100 mil, gratis.';
       
       case INTENTS.BANOS:
-        return 'Primer piso cerca Éxito. Segundo piso restaurantes';
+        return 'Primer piso cerca de Éxito, segundo piso en restaurantes, tercer piso junto al cine.';
       
       case INTENTS.CAJERO:
-        return 'Primer piso: Bancolombia, Davivienda, BBVA. 24h';
+        return 'Primer piso, zona de servicios. Bancolombia, Davivienda, BBVA y Bogotá. 24 horas.';
       
       case INTENTS.WIFI:
-        return 'Red: PUENTE_FREE_WIFI. Sin clave';
+        return 'Sí. Red: PUENTE_FREE_WIFI. Sin contraseña.';
       
       case INTENTS.ZONA_JUEGOS:
-        return 'Segundo piso, zona central. Gratis 11AM-8PM';
+        return 'Segundo piso, zona central. Para niños de 2 a 12 años. Gratis, abierta de 11 AM a 8 PM.';
       
       case INTENTS.SALA_LACTANCIA:
-        return 'Primer piso, punto información. Privado';
+        return 'Primer piso junto a información. Tiene sillas, cambiador y microondas. Privada.';
       
       case INTENTS.ACCESIBILIDAD:
-        return 'Rampas, ascensores, baños adaptados. Todo accesible';
+        return 'Todo accesible: rampas, ascensores, baños adaptados y parqueo preferencial.';
       
       case INTENTS.TARJETA_REGALO:
-        return 'Punto información. Desde 20 mil. Sin vencimiento';
+        return 'Punto de información, primer piso. Desde 20 mil pesos. Sin vencimiento.';
       
       case 'administracion':
-        return 'Primer piso, entrada principal. Lun-vie 9AM-6PM';
+        return 'Primer piso, entrada principal. Lunes a viernes de 9 AM a 6 PM.';
       
       // ============================================
-      // CATEGORÍAS (PROGRESIVO - LISTA Y PREGUNTA)
+      // CATEGORÍAS - Lista simple + pregunta
       // ============================================
       case INTENTS.RESTAURANTES:
-        return 'Crepes & Waffles, Subway, La Toscana. ¿Cuál?';
+        return 'Tenemos Crepes & Waffles, Subway y La Toscana. ¿Cuál te interesa?';
       
       case INTENTS.TIENDAS_ROPA:
-        return 'Nike, Adidas, Zara, H&M. ¿Cuál buscas?';
+        return 'Nike, Adidas, Zara y H&M. ¿Cuál buscas?';
       
       case INTENTS.TIENDAS_DEPORTES:
-        return 'Nike y Adidas. Segundo piso, zona norte';
+        return 'Nike y Adidas. Segundo piso, zona norte. ¿Ubicación exacta de cuál?';
       
       case INTENTS.BANCOS:
-        return 'Bancolombia y Davivienda. Primer piso';
+        return 'Bancolombia y Davivienda. Primer piso. Lunes a viernes de 8 a 5, sábados de 9 a 12.';
       
       case INTENTS.FARMACIAS:
-        return 'Drogas La Rebaja. Primer piso, local 108';
+        return 'Drogas La Rebaja, primer piso local 108. Lunes a sábado 8 AM a 8 PM, domingos 9 a 6.';
       
       case INTENTS.SUPERMERCADO:
-        return 'Éxito Express. Primer piso, local 120';
+        return 'Éxito Express, primer piso local 120. Lunes a sábado 8 AM a 9 PM, domingos 9 a 8.';
       
       // ============================================
-      // CINE (ULTRA CORTO)
+      // CINE - Específico según pregunta
       // ============================================
       case INTENTS.CINE:
-        return 'Cinemark, tercer piso. 8 salas 2D, 3D, XD';
+        return 'Cinemark, tercer piso. 8 salas con 2D, 3D y XD. Abierto de 11 AM a 11 PM.';
       
       case INTENTS.CINE_CARTELERA:
-        return '4 películas: acción, animación, drama, comedia';
+        return '4 películas: acción, animación infantil, drama y comedia. Detalles al 607 724 6666.';
       
       case INTENTS.CINE_HORARIOS:
-        return '11AM primera. 10PM última. Tel: 607-724-6666';
+        return 'Funciones desde 11 AM, última a las 10 PM. Horarios exactos: 607 724 6666.';
       
       case INTENTS.CINE_PRECIOS:
-        return '2D: 12 mil entre semana. Miércoles: 10 mil';
+        return '2D: 12 mil entre semana, 16 mil fines de semana. 3D: 18 y 22 mil. Miércoles: 10 mil.';
       
       // ============================================
-      // COMERCIAL (ULTRA CORTO)
+      // COMERCIAL - Atractivo pero breve
       // ============================================
       case INTENTS.PROMOCIONES:
-        return 'Tarjeta cliente, parqueo gratis >100mil, descuentos estudiantes';
+        return 'Tarjeta cliente frecuente, parqueo gratis en compras sobre 100 mil, descuentos para estudiantes 10-15%.';
       
       case INTENTS.EVENTOS:
-        return 'Viernes: festival gastronómico 5PM. Sábados: música 4PM';
+        return 'Viernes: festival gastronómico 5-8 PM, degustaciones gratis. Sábados: música en vivo 4 PM, entrada libre.';
       
       case INTENTS.OFERTAS:
       case INTENTS.DESCUENTOS:
-        return 'Estudiantes 10-15%. Adultos mayores 10%';
+        return 'Estudiantes: 10-15% con carnet lunes a miércoles. Adultos mayores: 10% siempre. Temporadas: junio y diciembre.';
       
+      // ============================================
+      // PRECIOS Y MENÚ - Progresivo inteligente
+      // ============================================
       case INTENTS.PRECIOS_COMIDA:
         return this._responsePreciosComida(entities);
       
@@ -221,304 +456,87 @@ export class ResponseGenerator {
         return this._responseMenuRestaurante(entities);
       
       // ============================================
-      // DEFAULT
+      // NO ENTENDIÓ - Útil
       // ============================================
       case INTENTS.UNKNOWN:
       default:
-        return 'No entendí. ¿Repetís?';
+        return this._pickRandom([
+          'Perdón, no entendí. ¿Buscas una tienda, horarios, o algún servicio?',
+          'No capté bien. ¿Información de qué necesitas?',
+          '¿Podrías repetir? Te ayudo con ubicaciones, horarios o servicios.'
+        ]);
     }
   }
   
   // ============================================
-  // RESPUESTAS ESPECÍFICAS (ULTRA CORTAS Y PROGRESIVAS)
+  // RESPUESTAS ESPECÍFICAS
   // ============================================
   
-  /**
-   * Buscar local - PROGRESIVO
-   * Solo da ubicación básica y pregunta qué más necesita
-   */
-  _responseBuscarLocal(entities) {
-    if (!entities.storeName) {
-      return '¿Qué tienda buscas?';
-    }
-    
-    const s = entities.storeData;
-    // Solo ubicación básica
-    return `${s.name}: ${s.floor}, local ${s.local}`;
-  }
-  
-  /**
-   * Ubicación - PROGRESIVO
-   */
-  _responseUbicacion(entities) {
-    if (!entities.storeName) {
-      return 'Carrera 25 #45-10, San Gil';
-    }
-    
-    const s = entities.storeData;
-    return `${s.name}: ${s.floor}, local ${s.local}`;
-  }
-  
-  /**
-   * Horario local - PROGRESIVO
-   */
-  _responseHorarioLocal(entities) {
-    if (!entities.storeName) {
-      return '¿De qué local?';
-    }
-    
-    const s = entities.storeData;
-    const shortHours = this._shortenHours(s.hours);
-    return `${s.name}: ${shortHours}`;
-  }
-  
-  /**
-   * Número teléfono - PROGRESIVO CON FORMATO CORRECTO
-   */
-  _responseNumeroTelefono(entities) {
-    if (!entities.storeName) {
-      return '¿De qué local?';
-    }
-    
-    const s = entities.storeData;
-    const phone = this._formatPhone(s.phone);
-    return `${s.name}: ${phone}`;
-  }
-  
-  /**
-   * Transferir - ACCIÓN
-   */
-  _responseTransferir(entities) {
-    if (!entities.storeName) {
-      return '¿A qué tienda?';
-    }
-    
-    const s = entities.storeData;
-    
-    return {
-      message: `Te comunico con ${s.name}`,
-      transferTo: s.phone,
-      storeName: s.name,
-      action: 'transfer'
-    };
-  }
-  
-  /**
-   * Pedir domicilio - PROGRESIVO
-   */
-  _responsePedirDomicilio(entities) {
-    if (!entities.storeName) {
-      return 'Domicilio: Crepes, Subway, Toscana. ¿Cuál?';
-    }
-    
-    const s = entities.storeData;
-    
-    if (s.category !== 'restaurante') {
-      return `${s.name} no es restaurante`;
-    }
-    
-    if (!s.delivery) {
-      const phone = this._formatPhone(s.phone);
-      return `${s.name} sin domicilio. Tel: ${phone}`;
-    }
-    
-    return {
-      message: `Te comunico con ${s.name}`,
-      transferTo: s.phone,
-      storeName: s.name,
-      action: 'transfer'
-    };
-  }
-  
-  /**
-   * Precios comida - PROGRESIVO
-   */
   _responsePreciosComida(entities) {
     if (entities.storeName) {
       const s = entities.storeData;
       
       if (s.category !== 'restaurante') {
-        return 'Crepes 35-50mil. Subway 15-25mil. Toscana 40-60mil';
+        return 'Subway: 15-25 mil. Crepes: 35-50 mil. Toscana: 40-60 mil.';
       }
       
-      return `${s.name}: ${s.averagePrice} pesos`;
+      return `${s.name}: entre ${s.averagePrice} pesos.`;
     }
     
-    return 'Subway 15-25mil. Crepes 35-50mil. Toscana 40-60mil';
+    return 'Subway: 15-25 mil. Crepes: 35-50 mil. Toscana: 40-60 mil. ¿Cuál te interesa?';
   }
   
-  /**
-   * Menú restaurante - PROGRESIVO
-   * Solo da 2 categorías con 2 platos cada una
-   */
   _responseMenuRestaurante(entities) {
     if (!entities.storeName) {
-      return '¿De qué restaurante?';
+      return '¿Menú de cuál? Crepes, Subway o Toscana?';
     }
     
     const s = entities.storeData;
     
     if (s.category !== 'restaurante') {
-      return `${s.name} no es restaurante`;
+      return `${s.name} no es restaurante. Tenemos Crepes, Subway y Toscana.`;
     }
     
     if (!s.menu) {
-      const phone = this._formatPhone(s.phone);
-      return `Menú completo: ${phone}`;
+      return `Para el menú completo de ${s.name} mejor llámalos al ${this._formatPhone(s.phone)}.`;
     }
     
-    // Solo 1-2 categorías con 2 items cada una
-    const categories = Object.keys(s.menu).slice(0, 2);
-    const items = categories.map(cat => {
-      const dishes = s.menu[cat].slice(0, 2).join(', ');
-      return dishes;
-    }).join('. ');
+    const cat1 = Object.keys(s.menu)[0];
+    const cat2 = Object.keys(s.menu)[1];
+    const items = [
+      ...s.menu[cat1].slice(0, 2),
+      ...s.menu[cat2].slice(0, 2)
+    ].join(', ');
     
-    return `${s.name}: ${items}`;
+    return `${s.name} tiene ${items}, y más. ¿Te interesa el menú completo?`;
   }
   
   // ============================================
-  // UTILIDADES DE OPTIMIZACIÓN
+  // UTILIDADES
   // ============================================
   
-  /**
-   * Optimiza respuesta para máximo ahorro
-   */
-  _optimizeResponse(response, intent) {
-    if (typeof response === 'object') {
-      return response;
-    }
-    
-    // Eliminar relleno
-    response = response
-      .replace(/con gusto/gi, '')
-      .replace(/por supuesto/gi, '')
-      .replace(/claro que sí/gi, '')
-      .replace(/te informo que/gi, '')
-      .replace(/quiero decirte/gi, '')
-      .replace(/es importante/gi, '')
-      .trim();
-    
-    // Acortar tiempos
-    response = response
-      .replace(/de la mañana/gi, 'AM')
-      .replace(/de la tarde/gi, 'PM')
-      .replace(/de la noche/gi, 'PM')
-      .replace(/del mediodía/gi, 'PM');
-    
-    // Acortar días
-    response = response
-      .replace(/lunes a sábado/gi, 'lun-sáb')
-      .replace(/lunes a viernes/gi, 'lun-vie')
-      .replace(/domingo/gi, 'dom')
-      .replace(/sábado/gi, 'sáb');
-    
-    // Remover espacios extras
-    response = response.replace(/\s+/g, ' ').trim();
-    
-    // Limitar palabras
-    const words = response.split(' ');
-    if (words.length > this.maxWordsPerResponse && !response.includes('?')) {
-      response = words.slice(0, this.maxWordsPerResponse).join(' ');
-    }
-    
-    return response;
-  }
-  
-  /**
-   * Agrega follow-up ultra corto
-   */
-  _addShortFollowUp(response) {
-    if (response.endsWith('?')) {
-      return response;
-    }
-    
-    const followUps = ['¿Algo más?', '¿Listo?', '¿Te sirve?'];
-    return `${response}. ${this._pickRandom(followUps)}`;
-  }
-  
-  /**
-   * Verifica si es intención de cierre
-   */
-  _isClosingIntent(intent) {
-    return [
-      INTENTS.DESPEDIDA,
-      INTENTS.NEGAR,
-      INTENTS.EMERGENCIA,
-      INTENTS.PRIMEROS_AUXILIOS
-    ].includes(intent);
-  }
-  
-  /**
-   * Acorta horarios al máximo
-   */
-  _shortenHours(hours) {
-    return hours
-      .replace(/de la mañana/gi, 'AM')
-      .replace(/de la tarde/gi, 'PM')
-      .replace(/de la noche/gi, 'PM')
-      .replace(/lunes a sábado/gi, 'lun-sáb')
-      .replace(/lunes a viernes/gi, 'lun-vie')
-      .replace(/domingo/gi, 'dom')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-  
-  /**
-   * Formatea teléfono para TTS CORRECTAMENTE
-   * "607-724-1234" → "seis cero siete, siete dos cuatro, uno dos tres cuatro"
-   */
   _formatPhone(phone) {
-    const digits = {
-      '0': 'cero', '1': 'uno', '2': 'dos', '3': 'tres',
-      '4': 'cuatro', '5': 'cinco', '6': 'seis', '7': 'siete',
-      '8': 'ocho', '9': 'nueve'
-    };
-    
     const cleaned = phone.replace(/\D/g, '');
-    
     if (cleaned.length === 10) {
-      // Colombia: 607 724 1234
-      const parts = [
-        cleaned.slice(0, 3),
-        cleaned.slice(3, 6),
-        cleaned.slice(6)
-      ];
-      
-      return parts.map(part => 
-        part.split('').map(d => digits[d]).join(' ')
-      ).join(', ');
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
     }
-    
-    // Fallback
-    return cleaned.split('').map(d => digits[d]).join(' ');
+    return phone;
   }
   
-  /**
-   * Elige random
-   */
   _pickRandom(array) {
     return array[Math.floor(Math.random() * array.length)];
   }
   
-  /**
-   * Respuesta variada de templates
-   */
   getVariedResponse(templateKey) {
     const templates = responseTemplates[templateKey];
-    
     if (!templates || templates.length === 0) {
-      return 'Info no disponible';
+      return 'No tengo esa información disponible.';
     }
-    
     if (templates.length === 1) {
       return templates[0];
     }
     
-    const available = templates.filter(
-      t => !this.lastResponses.includes(t)
-    );
-    
+    const available = templates.filter(t => !this.lastResponses.includes(t));
     const options = available.length > 0 ? available : templates;
     const selected = this._pickRandom(options);
     
@@ -530,20 +548,14 @@ export class ResponseGenerator {
     return selected;
   }
   
-  /**
-   * Calcula tiempo de respuesta en segundos
-   */
   estimateSpeechTime(text) {
     if (typeof text === 'object') {
       text = text.message || '';
     }
     const words = text.split(' ').length;
-    return Math.ceil(words / this.costPerSecond);
+    return Math.ceil(words / 2.5);
   }
   
-  /**
-   * Calcula costo en COP
-   */
   estimateCost(text) {
     const seconds = this.estimateSpeechTime(text);
     const minutes = seconds / 60;

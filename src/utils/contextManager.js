@@ -1,276 +1,420 @@
 // src/utils/contextManager.js
 
 import { logger } from './logger.js';
+import { autoLearningEngine } from '../services/learning/AutoLearningEngine.js';
+import { errorLearningSystem } from '../services/learning/ErrorLearningSystem.js';
 
 /**
- * Gestiona el contexto de la conversación
- * Evita repeticiones y mantiene coherencia
+ * ContextManager - Gestión de Contexto de Llamadas
+ * 
+ * Mejoras implementadas:
+ * - Integración con sistema de aprendizaje
+ * - Detección de feedback negativo
+ * - Contador de silencios
+ * - Métricas de satisfacción
+ * - Tracking de errores
+ * - 100% independiente por CallSid
  */
-export class ContextManager {
+class ContextManager {
   
   constructor() {
-    this.conversations = new Map(); // callSid -> contexto
-    this.maxContextAge = 10 * 60 * 1000; // 10 minutos
+    // Contextos separados por CallSid
+    this.contexts = new Map();
+    
+    // Configuración
+    this.config = {
+      maxContextAge: 10 * 60 * 1000, // 10 minutos
+      cleanupInterval: 5 * 60 * 1000, // 5 minutos
+      maxTurns: 20 // Máximo de turnos por conversación
+    };
+    
+    // Iniciar limpieza automática
+    this._startCleanup();
   }
   
   /**
-   * Obtiene o crea un contexto para una llamada
+   * Obtiene contexto de una llamada
    */
   getContext(callSid) {
-    if (!this.conversations.has(callSid)) {
-      this.conversations.set(callSid, this.createNewContext());
+    if (!this.contexts.has(callSid)) {
+      this.contexts.set(callSid, this._createNewContext(callSid));
     }
     
-    const context = this.conversations.get(callSid);
-    
-    // Limpiar si es muy viejo
-    if (Date.now() - context.startTime > this.maxContextAge) {
-      this.conversations.delete(callSid);
-      return this.createNewContext();
-    }
+    const context = this.contexts.get(callSid);
+    context.lastAccess = new Date();
     
     return context;
   }
   
   /**
-   * Crea un nuevo contexto vacío
+   * Crea nuevo contexto
    */
-  createNewContext() {
+  _createNewContext(callSid) {
     return {
-      startTime: Date.now(),
+      callSid,
+      createdAt: new Date(),
+      lastAccess: new Date(),
       turnCount: 0,
-      intentsHistory: [],
-      entitiesHistory: [],
-      responsesGiven: [],
-      lastIntent: null,
-      lastEntity: null,
-      lastResponse: null,
-      userSaidGoodbye: false,
+      silenceCount: 0,
+      hasGoodbye: false,
       storesMentioned: [],
-      topicsDiscussed: []
+      topicsDiscussed: [],
+      intentsHistory: [],
+      lastResponse: null,
+      lastIntent: null,
+      lastEntities: {},
+      userSatisfaction: 'unknown', // 'positive', 'negative', 'unknown'
+      errors: []
     };
   }
   
   /**
-   * Actualiza el contexto con nueva información
+   * Actualiza contexto después de cada turno
    */
   updateContext(callSid, intent, entities, response) {
     const context = this.getContext(callSid);
     
     context.turnCount++;
     context.lastIntent = intent;
-    context.lastEntity = entities;
     context.lastResponse = response;
+    context.lastEntities = entities;
     
-    // Historial de intenciones (últimas 5)
-    context.intentsHistory.push(intent);
-    if (context.intentsHistory.length > 5) {
-      context.intentsHistory.shift();
-    }
+    // Agregar intent al historial
+    context.intentsHistory.push({
+      intent,
+      entities,
+      timestamp: new Date()
+    });
     
-    // Historial de respuestas (últimas 3)
-    context.responsesGiven.push(response);
-    if (context.responsesGiven.length > 3) {
-      context.responsesGiven.shift();
-    }
-    
-    // Tiendas mencionadas
+    // Agregar tienda mencionada
     if (entities.storeName && !context.storesMentioned.includes(entities.storeName)) {
       context.storesMentioned.push(entities.storeName);
     }
     
-    // Temas discutidos
-    const topic = this.intentToTopic(intent);
+    // Agregar tema discutido
+    const topic = this._getTopicFromIntent(intent);
     if (topic && !context.topicsDiscussed.includes(topic)) {
       context.topicsDiscussed.push(topic);
     }
     
-    logger.debug('Contexto actualizado', { 
-      callSid, 
+    logger.debug('Contexto actualizado', {
+      callSid,
       turnCount: context.turnCount,
       storesMentioned: context.storesMentioned,
       topicsDiscussed: context.topicsDiscussed
     });
+  }
+  
+  /**
+   * Obtiene tema desde intención
+   */
+  _getTopicFromIntent(intent) {
+    const topicMapping = {
+      'buscar_local': 'busqueda',
+      'ubicacion': 'busqueda',
+      'horario_mall': 'horarios',
+      'horario_local': 'horarios',
+      'parqueadero': 'servicios',
+      'cajero': 'servicios',
+      'wifi': 'servicios',
+      'restaurantes': 'categoria',
+      'cine': 'entretenimiento',
+      'eventos': 'comercial',
+      'promociones': 'comercial'
+    };
     
-    return context;
+    return topicMapping[intent] || null;
   }
   
   /**
-   * Verifica si algo ya fue discutido
+   * Incrementa contador de silencios
    */
-  wasAlreadyDiscussed(callSid, intent) {
+  incrementSilenceCount(callSid) {
     const context = this.getContext(callSid);
-    return context.intentsHistory.includes(intent);
+    context.silenceCount++;
+    
+    logger.debug('Silencio incrementado', {
+      callSid,
+      silenceCount: context.silenceCount
+    });
+    
+    // Registrar en sistema de errores si excede límite
+    if (context.silenceCount >= 3) {
+      errorLearningSystem.recordTimeoutError({
+        callSid,
+        silenceCount: context.silenceCount,
+        totalDuration: this._calculateDuration(context),
+        lastIntent: context.lastIntent
+      });
+    }
+    
+    return context.silenceCount;
   }
   
   /**
-   * Verifica si una tienda ya fue mencionada
+   * Resetea contador de silencios
    */
-  wasStoreMentioned(callSid, storeName) {
+  resetSilenceCount(callSid) {
     const context = this.getContext(callSid);
-    return context.storesMentioned.includes(storeName);
+    context.silenceCount = 0;
   }
   
   /**
-   * Obtiene la última respuesta dada
-   */
-  getLastResponse(callSid) {
-    const context = this.getContext(callSid);
-    return context.lastResponse;
-  }
-  
-  /**
-   * Verifica si el usuario ya se despidió
-   */
-  userSaidGoodbye(callSid) {
-    const context = this.getContext(callSid);
-    return context.userSaidGoodbye;
-  }
-  
-  /**
-   * Marca que el usuario se despidió
+   * Marca que usuario se despidió
    */
   markGoodbye(callSid) {
     const context = this.getContext(callSid);
-    context.userSaidGoodbye = true;
+    context.hasGoodbye = true;
+    
+    // Registrar en sistema de aprendizaje
+    this._sendToLearningSystem(callSid, true);
   }
   
   /**
-   * Verifica si es una repetición reciente
+   * Verifica si usuario se despidió
    */
-  isRepeatingIntent(callSid, intent) {
+  userSaidGoodbye(callSid) {
+    if (!this.contexts.has(callSid)) {
+      return false;
+    }
+    return this.contexts.get(callSid).hasGoodbye;
+  }
+  
+  /**
+   * Detecta feedback negativo
+   */
+  detectNegativeFeedback(callSid, userText) {
+    const isNegative = errorLearningSystem.detectNegativeFeedback(userText);
+    
+    if (isNegative) {
+      const context = this.getContext(callSid);
+      context.userSatisfaction = 'negative';
+      
+      // Registrar en sistema de errores
+      errorLearningSystem.recordNegativeFeedback({
+        callSid,
+        userText,
+        previousIntent: context.lastIntent,
+        previousResponse: context.lastResponse
+      });
+      
+      logger.warn('Feedback negativo detectado', { callSid });
+    }
+    
+    return isNegative;
+  }
+  
+  /**
+   * Marca satisfacción positiva
+   */
+  markPositiveFeedback(callSid) {
+    const context = this.getContext(callSid);
+    context.userSatisfaction = 'positive';
+  }
+  
+  /**
+   * Registra error de detección
+   */
+  recordDetectionError(callSid, userText, detectedIntent, confidence) {
     const context = this.getContext(callSid);
     
-    // Revisar últimos 2 turnos
-    const recent = context.intentsHistory.slice(-2);
-    return recent.filter(i => i === intent).length >= 2;
-  }
-  
-  /**
-   * Obtiene sugerencias basadas en el contexto
-   */
-  getSuggestions(callSid) {
-    const context = this.getContext(callSid);
-    const suggestions = [];
-    
-    // Si preguntó por una tienda pero no horarios
-    if (context.storesMentioned.length > 0 && 
-        !context.topicsDiscussed.includes('horarios')) {
-      const store = context.storesMentioned[0];
-      suggestions.push(`¿Quieres saber el horario de ${store}?`);
-    }
-    
-    // Si preguntó horarios pero no ubicación
-    if (context.topicsDiscussed.includes('horarios') && 
-        !context.topicsDiscussed.includes('ubicacion')) {
-      suggestions.push('¿Necesitas saber dónde queda?');
-    }
-    
-    // Si preguntó por restaurante pero no menú
-    if (context.storesMentioned.some(s => s.includes('Crepes') || s.includes('Subway')) &&
-        !context.topicsDiscussed.includes('menu')) {
-      suggestions.push('¿Quieres conocer el menú?');
-    }
-    
-    return suggestions;
-  }
-  
-  /**
-   * Convierte intención en tema general
-   */
-  intentToTopic(intent) {
-    const topicMap = {
-      'buscar_local': 'busqueda',
-      'ubicacion': 'ubicacion',
-      'ubicacion_mall': 'ubicacion',
-      'horarios': 'horarios',
-      'horario_mall': 'horarios',
-      'horario_local': 'horarios',
-      'transferir': 'contacto',
-      'numero_telefono': 'contacto',
-      'menu_restaurante': 'menu',
-      'precios_comida': 'precios',
-      'cine': 'cine',
-      'cine_precios': 'cine',
-      'cine_cartelera': 'cine',
-      'parqueadero': 'servicios',
-      'banos': 'servicios',
-      'cajero': 'servicios',
-      'wifi': 'servicios'
+    const error = {
+      type: 'detection',
+      userText,
+      detectedIntent,
+      confidence,
+      timestamp: new Date()
     };
     
-    return topicMap[intent] || null;
+    context.errors.push(error);
+    
+    // Enviar a sistema de errores
+    errorLearningSystem.recordIntentError({
+      callSid,
+      userText,
+      detectedIntent,
+      confidence
+    });
   }
   
   /**
-   * Limpia contextos antiguos (llamar periódicamente)
+   * Registra error de transferencia
    */
-  cleanOldContexts() {
-    const now = Date.now();
-    let cleaned = 0;
-    
-    for (const [callSid, context] of this.conversations.entries()) {
-      if (now - context.startTime > this.maxContextAge) {
-        this.conversations.delete(callSid);
-        cleaned++;
-      }
-    }
-    
-    if (cleaned > 0) {
-      logger.info(`Limpiados ${cleaned} contextos antiguos`);
-    }
-  }
-  
-  /**
-   * Obtiene resumen del contexto para debug
-   */
-  getContextSummary(callSid) {
+  recordTransferError(callSid, storeName, phoneNumber, reason) {
     const context = this.getContext(callSid);
     
-    return {
-      turnCount: context.turnCount,
-      duration: Math.round((Date.now() - context.startTime) / 1000),
-      storesMentioned: context.storesMentioned,
-      topicsDiscussed: context.topicsDiscussed,
-      lastIntent: context.lastIntent
+    const error = {
+      type: 'transfer',
+      storeName,
+      phoneNumber,
+      reason,
+      timestamp: new Date()
     };
+    
+    context.errors.push(error);
+    
+    // Enviar a sistema de errores
+    errorLearningSystem.recordTransferError({
+      callSid,
+      storeName,
+      phoneNumber,
+      reason
+    });
   }
   
   /**
-   * Elimina un contexto específico
+   * Envía datos al sistema de aprendizaje
+   */
+  _sendToLearningSystem(callSid, wasSuccessful) {
+    if (!this.contexts.has(callSid)) return;
+    
+    const context = this.contexts.get(callSid);
+    
+    // Solo enviar si hubo interacción real
+    if (context.turnCount === 0) return;
+    
+    // Determinar éxito basado en satisfacción y turnos
+    const success = wasSuccessful && 
+                   context.userSatisfaction !== 'negative' &&
+                   context.errors.length === 0;
+    
+    // Enviar cada turno al sistema de aprendizaje
+    context.intentsHistory.forEach((turn, index) => {
+      autoLearningEngine.processCallResult({
+        callSid,
+        userText: `Turn ${index + 1}`, // Texto real no disponible aquí
+        detectedIntent: turn.intent,
+        confidence: 0.8, // Asumido
+        entities: turn.entities,
+        wasSuccessful: success,
+        userFeedback: context.userSatisfaction
+      });
+    });
+    
+    logger.debug('Datos enviados a sistema de aprendizaje', {
+      callSid,
+      success,
+      turns: context.turnCount
+    });
+  }
+  
+  /**
+   * Calcula duración de la llamada
+   */
+  _calculateDuration(context) {
+    const now = new Date();
+    const duration = now - context.createdAt;
+    return Math.floor(duration / 1000); // segundos
+  }
+  
+  /**
+   * Limpia contexto de una llamada
    */
   clearContext(callSid) {
-    this.conversations.delete(callSid);
+    if (!this.contexts.has(callSid)) return;
+    
+    // Enviar a sistema de aprendizaje antes de limpiar
+    this._sendToLearningSystem(callSid, true);
+    
+    this.contexts.delete(callSid);
+    
     logger.debug('Contexto eliminado', { callSid });
+  }
+  
+  /**
+   * Obtiene resumen del contexto
+   */
+  getContextSummary(callSid) {
+    if (!this.contexts.has(callSid)) {
+      throw new Error('Context not found');
+    }
+    
+    const context = this.contexts.get(callSid);
+    
+    return {
+      callSid: context.callSid,
+      duration: this._calculateDuration(context),
+      turnCount: context.turnCount,
+      silenceCount: context.silenceCount,
+      storesMentioned: context.storesMentioned,
+      topicsDiscussed: context.topicsDiscussed,
+      lastIntent: context.lastIntent,
+      userSatisfaction: context.userSatisfaction,
+      errorCount: context.errors.length,
+      hasGoodbye: context.hasGoodbye
+    };
   }
   
   /**
    * Obtiene estadísticas generales
    */
   getStats() {
-    return {
-      activeConversations: this.conversations.size,
-      avgTurnsPerConversation: this.calculateAvgTurns(),
-      totalConversations: this.conversations.size
-    };
-  }
-  
-  calculateAvgTurns() {
-    if (this.conversations.size === 0) return 0;
+    const activeContexts = Array.from(this.contexts.values());
     
-    let total = 0;
-    for (const context of this.conversations.values()) {
-      total += context.turnCount;
+    const stats = {
+      activeConversations: activeContexts.length,
+      averageTurns: 0,
+      averageDuration: 0,
+      satisfactionRate: 0,
+      totalErrors: 0
+    };
+    
+    if (activeContexts.length === 0) {
+      return stats;
     }
     
-    return Math.round(total / this.conversations.size);
+    let totalTurns = 0;
+    let totalDuration = 0;
+    let positiveCount = 0;
+    let totalErrors = 0;
+    
+    activeContexts.forEach(context => {
+      totalTurns += context.turnCount;
+      totalDuration += this._calculateDuration(context);
+      totalErrors += context.errors.length;
+      
+      if (context.userSatisfaction === 'positive') {
+        positiveCount++;
+      }
+    });
+    
+    stats.averageTurns = Math.round(totalTurns / activeContexts.length);
+    stats.averageDuration = Math.round(totalDuration / activeContexts.length);
+    stats.satisfactionRate = Math.round((positiveCount / activeContexts.length) * 100);
+    stats.totalErrors = totalErrors;
+    
+    return stats;
+  }
+  
+  /**
+   * Limpieza automática de contextos antiguos
+   */
+  _startCleanup() {
+    setInterval(() => {
+      const now = new Date();
+      const toDelete = [];
+      
+      this.contexts.forEach((context, callSid) => {
+        const age = now - context.lastAccess;
+        
+        if (age > this.config.maxContextAge) {
+          toDelete.push(callSid);
+        }
+      });
+      
+      toDelete.forEach(callSid => {
+        this.clearContext(callSid);
+      });
+      
+      if (toDelete.length > 0) {
+        logger.info('Limpieza automática ejecutada', {
+          cleaned: toDelete.length,
+          remaining: this.contexts.size
+        });
+      }
+    }, this.config.cleanupInterval);
   }
 }
 
-// Singleton global
+// Instancia singleton
 export const contextManager = new ContextManager();
-
-// Limpiar contextos antiguos cada 5 minutos
-setInterval(() => {
-  contextManager.cleanOldContexts();
-}, 5 * 60 * 1000);

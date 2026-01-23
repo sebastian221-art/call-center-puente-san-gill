@@ -4,6 +4,7 @@ import express from 'express';
 import twilio from 'twilio';
 import { IntentDetector } from '../services/intentDetector.js';
 import { ResponseGenerator } from '../services/responseGenerator.js';
+import { ConversationLogger } from '../services/Conversationlogger.js';
 import { contextManager } from '../utils/contextManager.js';
 import { logger } from '../utils/logger.js';
 
@@ -18,6 +19,7 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * - ResponseGenerator: respuestas independientes
  * 
  * contextManager maneja contextos SEPARADOS por CallSid
+ * ConversationLogger guarda TODO en PostgreSQL sin bloquear
  * 
  * Esto permite:
  * ✅ 100 llamadas simultáneas sin interferencia
@@ -25,6 +27,7 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * ✅ Sin contaminación de datos
  * ✅ Sistema completamente stateless
  * ✅ Escalable horizontalmente
+ * ✅ Logging completo en base de datos
  */
 
 // Variables globales para control de tiempo
@@ -41,10 +44,14 @@ router.post('/incoming', (req, res) => {
   
   logger.info('🔵 NUEVA LLAMADA ENTRANTE', { callSid, from });
   
+  // ✅ GUARDAR EN BD (async, no bloquea)
+  ConversationLogger.startConversation(callSid, from).catch(err => {
+    logger.error('Error guardando llamada inicial', { error: err.message });
+  });
+  
   // Iniciar timer de duración máxima
   setTimeout(() => {
     logger.warn('⏰ Llamada excedió 5 minutos', { callSid });
-    // Aquí podrías forzar el cierre si es necesario
   }, MAX_CALL_DURATION);
   
   const twiml = new VoiceResponse();
@@ -109,6 +116,11 @@ router.post('/process-speech', (req, res) => {
     // 1. Verificar si no entendió nada
     if (!speechResult || speechResult.trim() === '') {
       logger.warn('🔇 Silencio detectado', { callSid });
+      
+      // ✅ GUARDAR SILENCIO EN BD
+      ConversationLogger.incrementSilenceCount(callSid).catch(err => {
+        logger.error('Error guardando silencio', { error: err.message });
+      });
       
       // Incrementar contador de silencios
       const silenceCount = contextManager.incrementSilenceCount(callSid);
@@ -234,6 +246,41 @@ router.post('/process-speech', (req, res) => {
       confidence: detection.confidence,
       storeName: detection.entities.storeName || 'N/A',
       needsGPT: detection.needsGPT || false
+    });
+    
+    // ✅ GUARDAR INTENCIÓN EN BD (async, no bloquea)
+    ConversationLogger.logIntent(
+      callSid,
+      speechResult,
+      detection.intent,
+      detection.confidence,
+      detection.entities,
+      true
+    ).catch(err => {
+      logger.error('Error guardando intención', { error: err.message });
+    });
+    
+    // ✅ INCREMENTAR TURNO
+    ConversationLogger.incrementTurnCount(callSid).catch(err => {
+      logger.error('Error incrementando turno', { error: err.message });
+    });
+    
+    // ✅ GUARDAR TIENDA SI FUE MENCIONADA
+    if (detection.entities.storeName) {
+      ConversationLogger.updateStoresMentioned(
+        callSid,
+        detection.entities.storeName
+      ).catch(err => {
+        logger.error('Error guardando tienda', { error: err.message });
+      });
+    }
+    
+    // ✅ GUARDAR TOPIC
+    ConversationLogger.updateTopicsDiscussed(
+      callSid,
+      detection.intent
+    ).catch(err => {
+      logger.error('Error guardando topic', { error: err.message });
     });
     
     // 2. Si necesita GPT y confianza baja, pedir aclaración
@@ -416,6 +463,16 @@ router.post('/process-speech', (req, res) => {
       callSid 
     });
     
+    // ✅ GUARDAR ERROR EN BD
+    ConversationLogger.logError(
+      callSid,
+      'processing_error',
+      { message: error.message, stack: error.stack },
+      speechResult
+    ).catch(err => {
+      logger.error('Error guardando error en BD', { error: err.message });
+    });
+    
     twiml.say({
       voice: 'Polly.Lupe',
       language: 'es-MX'
@@ -441,6 +498,15 @@ router.post('/status', (req, res) => {
   });
   
   if (CallStatus === 'completed') {
+    // ✅ FINALIZAR CONVERSACIÓN EN BD
+    ConversationLogger.endConversation(
+      CallSid,
+      parseInt(CallDuration),
+      'positive' // Puedes mejorar esto detectando satisfacción
+    ).catch(err => {
+      logger.error('Error finalizando conversación en BD', { error: err.message });
+    });
+    
     setTimeout(() => {
       contextManager.clearContext(CallSid);
       logger.debug('🧹 Contexto limpiado', { callSid: CallSid });
@@ -456,12 +522,13 @@ router.post('/status', (req, res) => {
 router.get('/test', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'Call Center Premium - OPTIMIZADO',
-    version: '4.0.0',
+    service: 'Call Center Premium - OPTIMIZADO + BD',
+    version: '5.0.0',
     timestamp: new Date().toISOString(),
     features: [
       'Ultra-short responses (<15 words)',
       'Independent calls (100 simultaneous)',
+      'PostgreSQL logging',
       'Interruption detection',
       'Silence control',
       'Time/cost optimization',
@@ -469,7 +536,8 @@ router.get('/test', (req, res) => {
       '35+ intents',
       'Entity extraction',
       'Context management',
-      'Call transfer'
+      'Call transfer',
+      'Full conversation history'
     ],
     optimization: {
       avgResponseTime: '6 seconds',
@@ -482,11 +550,13 @@ router.get('/test', (req, res) => {
 /**
  * Estadísticas
  */
-router.get('/stats', (req, res) => {
-  const stats = contextManager.getStats();
+router.get('/stats', async (req, res) => {
+  const contextStats = contextManager.getStats();
+  const dbStats = await ConversationLogger.getQuickStats();
   
   res.json({
-    ...stats,
+    ...contextStats,
+    database: dbStats,
     timestamp: new Date().toISOString(),
     optimization: 'Ultra-short responses enabled',
     independentCalls: true,
@@ -538,13 +608,15 @@ router.delete('/context/:callSid', (req, res) => {
 /**
  * Health check
  */
-router.get('/health', (req, res) => {
-  const stats = contextManager.getStats();
+router.get('/health', async (req, res) => {
+  const contextStats = contextManager.getStats();
+  const dbStats = await ConversationLogger.getQuickStats();
   
   res.json({
     status: 'healthy',
     uptime: process.uptime(),
-    activeConversations: stats.activeConversations,
+    activeConversations: contextStats.activeConversations,
+    database: dbStats,
     memoryUsage: process.memoryUsage(),
     optimization: 'enabled',
     timestamp: new Date().toISOString()

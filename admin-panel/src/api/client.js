@@ -31,6 +31,17 @@ export const storesAPI = {
 };
 
 // ============================================
+// CONVERSATIONS API (NUEVO)
+// ============================================
+export const conversationsAPI = {
+  getAll: (params) => client.get('/conversations', { params }),
+  getRecent: (limit = 10) => client.get('/conversations/recent', { params: { limit } }),
+  getById: (callSid) => client.get(`/conversations/${callSid}`),
+  getSummary: () => client.get('/conversations/stats/summary'),
+  getByDay: (days = 7) => client.get('/conversations/stats/by-day', { params: { days } })
+};
+
+// ============================================
 // ANALYTICS API
 // ============================================
 export const analyticsAPI = {

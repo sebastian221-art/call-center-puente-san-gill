@@ -4,7 +4,7 @@ import express from 'express';
 import twilio from 'twilio';
 import { IntentDetector } from '../services/intentDetector.js';
 import { ResponseGenerator } from '../services/responseGenerator.js';
-import { ConversationLogger } from '../services/Conversationlogger.js';
+import { ConversationLogger } from '../services/ConversationLogger.js';
 import { contextManager } from '../utils/contextManager.js';
 import { logger } from '../utils/logger.js';
 
